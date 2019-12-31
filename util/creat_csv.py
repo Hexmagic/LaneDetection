@@ -10,7 +10,7 @@ CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.6
 VALID_SIZE = 0.2
 TEST_SIZE = 0.2
-DATA_ROOT = '/root/data'
+DATA_ROOT = '/root/private'
 
 
 class LaneDataFactory(object):
@@ -31,7 +31,7 @@ class LaneDataFactory(object):
         imgs: List[str] = []
         labels: List[str] = []
         # 获取图片和label
-        for road in ['Label_road02', 'Label_road04']:
+        for road in ['Road02', 'Road04']:
             img, label = self.getImageAndLabel(road)
             assert len(img) == len(label)
             logger.info(f"{road} find {len(img)} Image and Label")
