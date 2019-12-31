@@ -1,7 +1,8 @@
 from util.label_util import label_to_color_mask, mask_to_label
 import cv2
 import matplotlib.pyplot as plt
-
+import visdom
+import torch
 
 def testMask():
     img = cv2.imread('test2.png')
@@ -21,27 +22,44 @@ def testLoader():
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from torch.autograd import Variable
-from torch.nn import BCELoss,NLLLoss
-from torch.optim import Adam
+from torch.nn import BCELoss, NLLLoss,CrossEntropyLoss
+from torch.optim import Adam,RMSprop
+import numpy as np
+
+
+def encode(label):
+    h,w = label.shape[1:]
+    img = np.zeros((h,w))
+    for i in range(7,0,-1):
+        img[label[i]>= i] = i
+    return img
 
 
 def testModel():
+    vis = visdom.Visdom()
     model = DeeplabV3Plus(n_class=8).cuda()
-    loss_func = NLLLoss()
+    loss_func =BCELoss().cuda()
     opt = Adam(params=model.parameters())
     loader = get_train_loader()
-    loss_list =[]
+    loss_list = []
     for epoch in range(5):
         for i, batch in enumerate(loader):
             x, y = batch
             xv, yv = Variable(x).cuda(), Variable(y).cuda()
             yhat = model(xv)
             opt.zero_grad()
-            loss = loss_func(yhat, yv.long())
-            loss_list.append(loss.item(0))
-            if i%15==0:
+            yhat = torch.sigmoid(yhat)
+            yv = torch.sigmoid(yv)
+            loss = loss_func(yhat, yv)
+            loss_list.append(loss.item())
+            if i % 10 == 0:
                 print(f'Epoch {epoch} loss {sum(loss_list)/len(loss_list)}')
+                img =yhat.cpu().data.numpy()[0]
+                img = encode(img)
+                img = label_to_color_mask(img)
+
             loss.backward()
             opt.step()
+
 
 testModel()

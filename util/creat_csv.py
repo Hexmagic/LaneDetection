@@ -10,7 +10,7 @@ CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.6
 VALID_SIZE = 0.2
 TEST_SIZE = 0.2
-DATA_ROOT = '/root/private'
+DATA_ROOT = 'D:\Compressed'
 
 
 class LaneDataFactory(object):
@@ -57,7 +57,7 @@ class LaneDataFactory(object):
             labelParent = str(ele.parent).replace(path, 'Gray_Label').replace(
                 f'ColorImage_{path.lower()}\\ColorImage', f'Label_{path.lower()}\\Label'
             )
-            labelPath = f'{labelParent}\\{imgName.replace(".jpg","_bin.png")}'
+            labelPath = os.path.join(labelParent,imgName.replace(".jpg","_bin.png"))
             if not os.path.exists(os.path.join(self.root, labelPath)):
                 continue
             img_list.append(str(ele))
