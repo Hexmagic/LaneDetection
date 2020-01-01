@@ -8,7 +8,7 @@ import torch
 from logzero import setup_logger
 from torch.autograd import Variable
 from torch.nn import BCELoss, BCEWithLogitsLoss
-from torch.optim import Adam
+from torch.optim import RMSprop
 from tqdm import tqdm
 
 from model.deeplabv3_plus import DeeplabV3Plus
@@ -28,7 +28,7 @@ logger = setup_logger(
 def train():
     model = DeeplabV3Plus(n_class=8).cuda()
     loss_func = BCEWithLogitsLoss().cuda()
-    opt = Adam(params=model.parameters())
+    opt = RMSprop(params=model.parameters(),lr=1e-4,alpha=0.95,weight_decay=1e-5)
     loader = get_train_loader()
     for epoch in range(5):
         i = 0
@@ -39,7 +39,7 @@ def train():
             xv, yv = Variable(x).cuda(), Variable(y).cuda()
             yhat = model(xv)
             opt.zero_grad()
-            loss = loss_func(yhat, yv)
+            loss = loss_func(yv,yhat)
             if i % 20 == 0:
                 print(f"Epoch {epoch} batch {i} loss {sum(loss_list)/len(loss_list)}")
                 loss_list = []
