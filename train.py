@@ -38,8 +38,6 @@ def train():
             x, y = batch
             xv, yv = Variable(x).cuda(), Variable(y).cuda()
             yhat = model(xv)
-            yhat = torch.sigmoid(yhat)
-            yv = torch.sigmoid(yv)
             opt.zero_grad()
             loss = loss_func(yhat, yv)
             if i % 20 == 0:
