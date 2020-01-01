@@ -1,5 +1,5 @@
 import torch
-from .datagener import get_train_loader,get_test_loader,get_valid_loader
+from util.datagener import get_train_loader,get_test_loader,get_valid_loader
 
 mean = torch.zeros(3)
 std = torch.zeros(3)
