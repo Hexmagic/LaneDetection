@@ -21,7 +21,7 @@ if not os.path.exists("log"):
     os.mkdir("log")
 
 logger = setup_logger(
-    name="", logfile="log/loss.log", level=logging.ERROR, maxBytes=1e6, backupCount=3
+    name="", logfile="log/loss.log", level=logging.INFO, maxBytes=1e6, backupCount=3
 )
 
 
