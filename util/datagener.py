@@ -54,7 +54,7 @@ class LanDataSet(Dataset):
 def get_train_loader():
     return DataLoader(LanDataSet('data_list/train.csv'),
                       shuffle=True,
-                      batch_size=4)
+                      batch_size=3)
 
 
 def get_test_loader():
