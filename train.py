@@ -42,6 +42,7 @@ def train():
             loss = loss_func(yhat, yv)
             if i % 20 == 0:
                 print(f"Epoch {epoch} batch {i} loss {sum(loss_list)/len(loss_list)}")
+                loss_list = []
             loss_list.append(loss.item())
             logger.info(f"Loss Value {loss.item()}")
             loss.backward()
