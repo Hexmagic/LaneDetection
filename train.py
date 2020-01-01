@@ -39,7 +39,7 @@ def train():
             xv, yv = Variable(x).cuda(), Variable(y).cuda()
             yhat = model(xv)
             opt.zero_grad()
-            loss = loss_func(yv,yhat)
+            loss = loss_func(yhat,yv)
             if i % 20 == 0:
                 print(f"Epoch {epoch} batch {i} loss {sum(loss_list)/len(loss_list)}")
                 loss_list = []
