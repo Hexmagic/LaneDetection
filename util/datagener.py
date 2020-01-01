@@ -51,10 +51,10 @@ class LanDataSet(Dataset):
         return img, torch.from_numpy(label)
 
 
-def get_train_loader():
+def get_train_loader(batch_size):
     return DataLoader(LanDataSet('data_list/train.csv'),
                       shuffle=True,
-                      batch_size=3)
+                      batch_size=batch_size)
 
 
 def get_test_loader():
