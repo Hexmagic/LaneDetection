@@ -7,8 +7,8 @@ import numpy as np
 import torch
 from logzero import setup_logger
 from torch.autograd import Variable
-from torch.nn import BCELoss, CrossEntropyLoss, NLLLoss
-from torch.optim import Adam, RMSprop
+from torch.nn import BCELoss,BCEWithLogitsLoss
+from torch.optim import Adam
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import LanDataSet, get_train_loader
@@ -26,7 +26,7 @@ logger = setup_logger(
 
 def train():
     model = DeeplabV3Plus(n_class=8).cuda()
-    loss_func = BCELoss().cuda()
+    loss_func = BCEWithLogitsLoss().cuda()
     opt = Adam(params=model.parameters())
     loader = get_train_loader()
     loss_list = []
