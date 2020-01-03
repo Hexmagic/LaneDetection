@@ -121,28 +121,28 @@ def train():
                     print(
                         f"Epoch {epoch} batch {i} loss {sum(loss_list)/len(loss_list)}"
                     )
-                    continue
-                    yout = torch.sigmoid(yout)
-                    output_np = yout.cpu().detach().numpy().copy(
-                    )  # output_np.shape = (4, 2, 160, 160)
-                    output_np = np.argmax(output_np, axis=1)
-                    bag_msk_np = yv.cpu().detach().numpy().copy(
-                    )  # bag_msk_np.shape = (4, 2, 160, 160)
-                    msk = encode(output_np)
-                    mask = np.argmax(bag_msk_np, axis=1)
-                    label = encode(mask)
+                    #continue
+                    # yout = torch.sigmoid(yout)
+                    # output_np = yout.cpu().detach().numpy().copy(
+                    # )  # output_np.shape = (4, 2, 160, 160)
+                    # output_np = np.argmax(output_np, axis=1)
+                    # bag_msk_np = yv.cpu().detach().numpy().copy(
+                    # )  # bag_msk_np.shape = (4, 2, 160, 160)
+                    # msk = encode(output_np)
+                    # mask = np.argmax(bag_msk_np, axis=1)
+                    # label = encode(mask)
 
-                    msk = np.array([msk.transpose((2, 0, 1))])
-                    bag_msk_np = np.array([label.transpose((2, 0, 1))])
-                    vis.images(msk,
-                               win='train_pred',
-                               opts=dict(title='train prediction'))
-                    vis.images(bag_msk_np,
-                               win='train_label',
-                               opts=dict(title='train prediction'))
-                    vis.line(loss_list,
-                             win='train_iter_loss',
-                             opts=dict(title='train iter loss'))
+                    # msk = np.array([msk.transpose((2, 0, 1))])
+                    # bag_msk_np = np.array([label.transpose((2, 0, 1))])
+                    # vis.images(msk,
+                    #            win='train_pred',
+                    #            opts=dict(title='train prediction'))
+                    # vis.images(bag_msk_np,
+                    #            win='train_label',
+                    #            opts=dict(title='train prediction'))
+                    # vis.line(loss_list,
+                    #          win='train_iter_loss',
+                    #          opts=dict(title='train iter loss'))
 
                 loss_list.append(loss.item())
                 f.write(str(loss.item()) + '\n')
