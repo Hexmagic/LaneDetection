@@ -52,11 +52,10 @@ class LaneDataFactory(object):
     def getImageAndLabel(self, path: str) -> Tuple[List[str], List[str]]:
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
-        import pdb; pdb.set_trace()
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*.jpg'):
-            import pdb; pdb.set_trace()
             imgName = ele.name
-            labelParent = str(ele.parent).replace(path, f'Gray_Label/Label_{path.lower()}/Label'
+            road = path.split('/')[-1]
+            labelParent = str(ele.parent).replace(path, f'Gray_Label/Label_{road.lower()}/Label'
             )
             labelPath = os.path.join(labelParent,imgName.replace(".jpg","_bin.png"))
             if not os.path.exists(os.path.join(self.root, labelPath)):
