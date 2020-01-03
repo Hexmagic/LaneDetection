@@ -53,6 +53,7 @@ class LaneDataFactory(object):
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*/*/*.jpg'):
+            import pdb; pdb.set_trace()
             imgName = ele.name
             labelParent = str(ele.parent).replace(path, 'Gray_Label').replace(
                 f'ColorImage_{path.lower()}\\ColorImage', f'Label_{path.lower()}\\Label'
