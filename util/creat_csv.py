@@ -54,6 +54,7 @@ class LaneDataFactory(object):
         img_list, label_list = [], []
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*/*/*.jpg'):
             imgName = ele.name
+            import pdb; pdb.set_trace()
             labelParent = str(ele.parent).replace(path, 'Gray_Label').replace(
                 f'ColorImage_{path.lower()}\\ColorImage', f'Label_{path.lower()}\\Label'
             )
