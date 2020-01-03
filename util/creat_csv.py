@@ -56,8 +56,7 @@ class LaneDataFactory(object):
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*.jpg'):
             import pdb; pdb.set_trace()
             imgName = ele.name
-            labelParent = str(ele.parent).replace(path, 'Gray_Label').replace(
-                f'ColorImage_{path.lower()}\\ColorImage', f'Label_{path.lower()}\\Label'
+            labelParent = str(ele.parent).replace(path, f'Gray_Label/Label_{path.lower()}/Label'
             )
             labelPath = os.path.join(labelParent,imgName.replace(".jpg","_bin.png"))
             if not os.path.exists(os.path.join(self.root, labelPath)):
