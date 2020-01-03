@@ -12,7 +12,7 @@ from torch.autograd import Variable
 from torch.nn import BCELoss, BCEWithLogitsLoss, MultiLabelMarginLoss, NLLLoss
 from torch.optim import Adam, AdamW, RMSprop, ASGD
 from tqdm import tqdm
-from visdom import Visdom
+#from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import LanDataSet, get_train_loader, get_valid_loader
@@ -97,7 +97,7 @@ def encode(labels):
 
 
 def train():
-    vis = Visdom()
+    #vis = Visdom()
     model = DeeplabV3Plus(n_class=8).cuda()
     loss_func = BCEWithLogitsLoss().cuda()
     opt = AdamW(params=model.parameters())
@@ -105,7 +105,7 @@ def train():
     vloader = (get_valid_loader()).__iter__()
     loss_list = []
     with open('loss.log', 'w') as f:
-        for epoch in range(5):
+        for epoch in range(10):
             i = 0
             for batch in tqdm(loader, desc=f"Epoch {epoch} process"):
                 i += 1
@@ -121,6 +121,7 @@ def train():
                     print(
                         f"Epoch {epoch} batch {i} loss {sum(loss_list)/len(loss_list)}"
                     )
+                    continue
                     yout = torch.sigmoid(yout)
                     output_np = yout.cpu().detach().numpy().copy(
                     )  # output_np.shape = (4, 2, 160, 160)
