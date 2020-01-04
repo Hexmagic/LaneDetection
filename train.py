@@ -112,8 +112,7 @@ def train():
                 x, y = batch
                 xv, yv = Variable(x).cuda(), Variable(y).cuda()
                 yout = model(xv)
-                yout = torch.sigmoid(yout)
-                yout = torch.argmax(yout, dim=1)
+                #yout = torch.sigmoid(yhat)
                 opt.zero_grad()
                 loss = loss_func(yout, yv)
                 if i % 1000 == 0:
