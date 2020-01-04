@@ -13,14 +13,14 @@ test_loader = get_test_loader()
 loss_list = []
 i = 0
 for batch in tqdm(test_loader):
-    x, y = batch
+	x, y = batch
 	i+=1
-	if i>20:
+	if i>100:
 		break
-    xv, yv = Variable(x).cuda(), Variable(y).cuda()
-    yout = model(xv)
-    yout = torch.sigmoid(yout)
-    loss = loss_fuc(yout, yv)
-    loss_list.append(loss.item())
+	xv, yv = Variable(x).cuda(), Variable(y).cuda()
+	yout = model(xv)
+	yout = torch.sigmoid(yout)
+	loss = loss_fuc(yout, yv)
+	loss_list.append(loss.item())
 
 print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
