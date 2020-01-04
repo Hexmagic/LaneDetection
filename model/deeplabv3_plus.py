@@ -174,9 +174,9 @@ class DeeplabV3Plus(Module):
             Conv2d(256 + 64, 256, 1),
         )
         self.projection = Sequential(BatchNorm2d(256 + 32), ReLU(True),
-                                     Conv2d(256 + 32, 256),
+                                     Conv2d(256 + 32, 256,1),
                                      BatchNorm2d(256), ReLU(True),
-                                     Conv2d(256, n_class))
+                                     Conv2d(256, n_class,1))
         # self.projection2 = Sequential(
         #     BatchNorm2d()
         # )
