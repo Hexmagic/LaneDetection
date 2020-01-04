@@ -18,7 +18,7 @@ from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import LanDataSet, get_train_loader, get_valid_loader
 from util.label_util import label_to_color_mask, mask_to_label
 
-#torch.cuda.set_device(6)
+torch.cuda.set_device(6)
 
 if not os.path.exists("log"):
 	os.mkdir("log")
@@ -97,7 +97,7 @@ def encode(labels):
 
 
 def train():
-	vis = Visdom()
+	#vis = Visdom()
 	model = DeeplabV3Plus(n_class=8).cuda()
 	loss_func = BCEWithLogitsLoss().cuda()
 	opt = AdamW(params=model.parameters())
@@ -125,27 +125,27 @@ def train():
 						f"Epoch {epoch} batch {i} loss {np.mean(loss_list)}"
 					)
 					#continue
-					yout = torch.sigmoid(yout)
-					output_np = yout.cpu().detach().numpy().copy(
-					)  # output_np.shape = (4, 2, 160, 160)
-					output_np = np.argmax(output_np, axis=1)
-					bag_msk_np = yv.cpu().detach().numpy().copy(
-					)  # bag_msk_np.shape = (4, 2, 160, 160)
-					msk = encode(output_np)
-					mask = np.argmax(bag_msk_np, axis=1)
-					label = encode(mask)
+					# yout = torch.sigmoid(yout)
+					# output_np = yout.cpu().detach().numpy().copy(
+					# )  # output_np.shape = (4, 2, 160, 160)
+					# output_np = np.argmax(output_np, axis=1)
+					# bag_msk_np = yv.cpu().detach().numpy().copy(
+					# )  # bag_msk_np.shape = (4, 2, 160, 160)
+					# msk = encode(output_np)
+					# mask = np.argmax(bag_msk_np, axis=1)
+					# label = encode(mask)
 
-					msk = np.array([msk.transpose((2, 0, 1))])
-					bag_msk_np = np.array([label.transpose((2, 0, 1))])
-					vis.images(msk,
-							   win='train_pred',
-							   opts=dict(title='train prediction'))
-					vis.images(bag_msk_np,
-							   win='train_label',
-							   opts=dict(title='train prediction'))
-					vis.line(loss_list,
-							 win='train_iter_loss',
-							 opts=dict(title='train iter loss'))
+					# msk = np.array([msk.transpose((2, 0, 1))])
+					# bag_msk_np = np.array([label.transpose((2, 0, 1))])
+					# vis.images(msk,
+					# 		   win='train_pred',
+					# 		   opts=dict(title='train prediction'))
+					# vis.images(bag_msk_np,
+					# 		   win='train_label',
+					# 		   opts=dict(title='train prediction'))
+					# vis.line(loss_list,
+					# 		 win='train_iter_loss',
+					# 		 opts=dict(title='train iter loss'))
 
 				loss_list.append(loss.item())
 				f.write(str(loss.item()) + '\n')
