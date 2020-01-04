@@ -4,7 +4,7 @@ import torch
 from torch.autograd import Variable
 from torch.nn import BCELoss
 loss_fuc = BCELoss()
-net = DeeplabV3Plus()
+net = DeeplabV3Plus(n_class=8)
 net.load_state_dict(torch.load('parameter.pkl'))
 test_loader = get_test_loader()
 loss_list  =[]
