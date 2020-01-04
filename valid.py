@@ -11,8 +11,12 @@ model = DeeplabV3Plus(n_class=8).cuda()
 model.load_state_dict(torch.load('parameter.pkl'))
 test_loader = get_test_loader()
 loss_list = []
+i = 0
 for batch in tqdm(test_loader):
     x, y = batch
+	i+=1
+	if i>20:
+		break
     xv, yv = Variable(x).cuda(), Variable(y).cuda()
     yout = model(xv)
     yout = torch.sigmoid(yout)
