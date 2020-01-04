@@ -14,7 +14,7 @@ def one_hot(img):
     return zs
 
 
-def crop_resize_data(image, label=None, image_size=[1024, 384], offset=690):
+def crop_resize_data(image, label=None, image_size=[1024//2, 384//2], offset=690):
     roi_image = image[offset:, :]
     if label is not None:
         roi_label = label[offset:, :]
