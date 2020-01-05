@@ -41,7 +41,7 @@ def train():
 
     def adjust_learning_rate(optimizer, epoch):
         if epoch<3:
-            lr = 0.001
+            lr = 0.003/epoch
         else:
             lr = 0.0005/(epoch//2)
         for param_group in optimizer.param_groups:
