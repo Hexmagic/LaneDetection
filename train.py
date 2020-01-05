@@ -59,7 +59,7 @@ def train():
                 opt.zero_grad()
                 loss = loss_func(yout, yv)
                 if i % 1000 == 0:
-                    torch.save(model.state_dict(), '\parameter.pkl')
+                    torch.save(model.state_dict(), 'parameter.pkl')
                 if i % 10 == 0:
                     print(f"Epoch {epoch} batch {i} loss {np.mean(loss_list)}")
                     #continue
