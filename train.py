@@ -36,7 +36,8 @@ def train():
     loss_func = BCEWithLogitsLoss().cuda()
     opt = AdamW(params=model.parameters())
     loader = get_train_loader()
-    loss_list = []
+    vloader = get_valid_loader()
+    
 
     def adjust_learning_rate(optimizer, epoch):
         if epoch<3:
@@ -49,8 +50,9 @@ def train():
     with open('loss.log', 'w') as f:
         for epoch in range(10):
             i = 0
+            loss_list = []
             #adjust_learning_rate(opt, epoch + 1)
-            for batch in tqdm(loader, desc=f"Epoch {epoch} process"):
+            for batch in tqdm(loader, desc=f"Epoch {epoch} Train"):
                 i += 1
                 x, y = batch
                 xv, yv = Variable(x).cuda(), Variable(y).cuda()
@@ -90,6 +92,12 @@ def train():
                 #logger.info(f"Loss Value {loss.item()}")
                 loss.backward()
                 opt.step()
-
-
+            vloss = []
+            for batch in tqdm(vloader,desc=f'{epoch} Valid'):
+                x,y = batch
+                xv,yv = Variable(x).cuda(),Variable(y).cuda()
+                yout = model(xv)
+                loss = loss_func(yout,yv)
+                vloss.append(loss.item())
+            print(f"Epoch {epoch} val loss {np.mean(vloss)}")
 train()
