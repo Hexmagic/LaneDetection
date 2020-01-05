@@ -94,16 +94,17 @@ def train():
                 #logger.info(f"Loss Value {loss.item()}")
                 loss.backward()
                 opt.step()
-            vloss = []
-            j = 0
-            for batch in tqdm(vloader,desc=f'{epoch} Valid'):
-                x,y = batch
-                j+=1
-                if j>100:
-                    break
-                xv,yv = Variable(x).cuda(),Variable(y).cuda()
-                yout = model(xv)
-                loss = loss_func(yout,yv)
-                vloss.append(loss.item())
-            print(f"Epoch {epoch} val loss {np.mean(vloss)}")
+            with torch.no_grad():
+                vloss = []
+                j = 0
+                for batch in tqdm(vloader,desc=f'{epoch} Valid'):
+                    x,y = batch
+                    j+=1
+                    if j>100:
+                        break
+                    xv,yv = Variable(x).cuda(),Variable(y).cuda()
+                    yout = model(xv)
+                    loss = loss_func(yout,yv)
+                    vloss.append(loss.item())
+                print(f"Epoch {epoch} val loss {np.mean(vloss)}")
 train()
