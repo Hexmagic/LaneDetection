@@ -55,6 +55,8 @@ def train():
             for batch in tqdm(loader, desc=f"Epoch {epoch} Train"):
                 i += 1
                 x, y = batch
+                if i>100:
+                    break
                 xv, yv = Variable(x).cuda(), Variable(y).cuda()
                 yout = model(xv)
                 #yout = torch.sigmoid(yhat) 如果用BCELoss需要取消注释
@@ -93,8 +95,12 @@ def train():
                 loss.backward()
                 opt.step()
             vloss = []
+            j = 0
             for batch in tqdm(vloader,desc=f'{epoch} Valid'):
                 x,y = batch
+                j+=1
+                if j>100:
+                    break
                 xv,yv = Variable(x).cuda(),Variable(y).cuda()
                 yout = model(xv)
                 loss = loss_func(yout,yv)
