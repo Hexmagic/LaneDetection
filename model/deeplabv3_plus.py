@@ -174,7 +174,7 @@ class DeeplabV3Plus(Module):
 
         for m in self.modules():
             if isinstance(m,Conv2d):
-                init.kaiming_normal_(m.weight.data)
+                init.kaiming_uniform_(m.weight.data)
 
     def forward(self, x):
         self.backbone(x)
