@@ -40,7 +40,7 @@ def train():
 
     def adjust_learning_rate(optimizer, epoch):
         for param_group in optimizer.param_groups:
-            param_group['lr'] = 0.005 / epoch
+            param_group['lr'] = 0.01 / (epoch*5)
 
     with open('loss.log', 'w') as f:
         for epoch in range(10):
