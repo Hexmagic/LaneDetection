@@ -49,7 +49,7 @@ def train():
     with open('loss.log', 'w') as f:
         for epoch in range(10):
             i = 0
-            adjust_learning_rate(opt, epoch + 1)
+            #adjust_learning_rate(opt, epoch + 1)
             for batch in tqdm(loader, desc=f"Epoch {epoch} process"):
                 i += 1
                 x, y = batch
