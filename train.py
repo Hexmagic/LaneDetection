@@ -106,5 +106,6 @@ def train():
                     yout = model(xv)
                     loss = loss_func(yout,yv)
                     vloss.append(loss.item())
+                import pdb; pdb.set_trace()
                 print(f"Epoch {epoch} val loss {np.mean(vloss)}")
 train()
