@@ -78,9 +78,10 @@ class Xception(Module):
         ])
 
         # 分开方便deeplabv3+ 取出low feature
-        self.entry_1 = self.residual_cls(128, 256, stride=2)
-
-        self.entry_2 = self.residual_cls(256, 728, stride=2)
+        self.entry_1 = Sequential(*[
+            self.residual_cls(128, 256, stride=2),
+            self.residual_cls(256, 728, stride=2),
+        ])
 
         self.middle = Sequential(*[
             self.residual_cls(728, 728, stride=1)
@@ -103,9 +104,8 @@ class Xception(Module):
 
     def forward(self, x):
         self.entry_0_out = self.entry_0(x)
-        self.entry_1_out = self.entry_1(self.entry_0_out)
-        entry_2_out = self.entry_2(self.entry_1_out)
-        middle_out = self.middle(entry_2_out)
+        entry_1_out = self.entry_1(self.entry_0_out)
+        middle_out = self.middle(entry_1_out)
         self.exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
@@ -165,51 +165,32 @@ class DeeplabV3Plus(Module):
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
-        self.low8_projection = Sequential(Conv2d(256, 64, kernel_size=1))
-        self.low4_projection = Sequential(Conv2d(128, 32, kernel_size=1))
-
-        self.projection8 = Sequential(
-            BatchNorm2d(256 + 64),
-            ReLU(True),
-            Conv2d(256 + 64, 256, 1),
-        )
-        self.projection = Sequential(BatchNorm2d(256 + 32), ReLU(True),
-                                     #Conv2d(256 + 32, 256,1),
-                                     SparableConv(288,256),
+        self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
+        self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
+                                     Conv2d(256 + 48, 256, 1),
                                      BatchNorm2d(256), ReLU(True),
-                                     SparableConv(256,n_class),
-                                    )
-        self.weight_init()
-        # self.projection2 = Sequential(
-        #     BatchNorm2d()
-        # )
+                                     Conv2d(256, n_class, 1))
 
-    def weight_init(self):
-        for m in self.modules():
+        for m in self.modules:
             if isinstance(m,Conv2d):
                 init.kaiming_normal_(m.weight.data)
 
     def forward(self, x):
         self.backbone(x)
         feature_map = self.backbone.exit_out
-        l4 = self.backbone.entry_0_out
+        low_feature = self.backbone.entry_0_out
+        feature_map = self.aspp(feature_map)
+        low_feature = self.low_projection(low_feature)
 
-        l8 = self.backbone.entry_1_out
-        f8 = self.aspp(feature_map)
-        h, w = l8.size()[2:]
-        f8 = Upsample((h, w), mode='bilinear', align_corners=True)(f8)
-        l8 = self.low8_projection(l8)
-        l8 = torch.cat([l8, f8], dim=1)
+        h, w = low_feature.size()[2:]
+        feature_map = Upsample((h, w), mode='bilinear',
+                               align_corners=True)(feature_map)
+        feature_map = torch.cat([low_feature, feature_map], dim=1)
 
-        f4 = self.projection8(l8)
-        l4 = self.low4_projection(l4)
-
-        h, w = l4.size()[2:]
-        f4 = Upsample((h, w), mode='bilinear', align_corners=True)(f4)
-        l4 = torch.cat([l4, f4], dim=1)
         h, w = x.size()[2:]
-        rst = Upsample((h, w), mode='bilinear', align_corners=True)(l4)
-        return self.projection(rst)
+        feature_map = Upsample((h, w), mode='bilinear',
+                               align_corners=True)(feature_map)
+        return self.projection(feature_map)
 
 
 if __name__ == "__main__":
