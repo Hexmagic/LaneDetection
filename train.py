@@ -18,7 +18,7 @@ from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import LanDataSet, get_train_loader, get_valid_loader
 from util.label_util import label_to_color_mask, mask_to_label
 
-torch.cuda.set_device(7)
+torch.cuda.set_device(6)
 
 if not os.path.exists("log"):
     os.mkdir("log")
@@ -41,7 +41,7 @@ def train():
 
     def adjust_learning_rate(optimizer, epoch):
         if epoch<3:
-            lr = 0.003/epoch
+            lr = 0.005/epoch
         else:
             lr = 0.0005/(epoch//2)
         for param_group in optimizer.param_groups:
@@ -51,7 +51,7 @@ def train():
         for epoch in range(10):
             i = 0
             loss_list = []
-            #adjust_learning_rate(opt, epoch + 1)
+            adjust_learning_rate(opt, epoch + 1)
             for batch in tqdm(loader, desc=f"Epoch {epoch} Train"):
                 i += 1
                 x, y = batch
