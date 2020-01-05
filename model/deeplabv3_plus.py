@@ -172,9 +172,9 @@ class DeeplabV3Plus(Module):
                                      BatchNorm2d(256), ReLU(True),
                                      Conv2d(256, n_class, 1))
 
-        for m in self.modules():
-            if isinstance(m,Conv2d):
-                init.kaiming_normal_(m.weight.data,mode='fan_out',nonlinearity='relu')
+        # for m in self.modules():
+        #     if isinstance(m,Conv2d):
+        #         init.kaiming_normal_(m.weight.data,mode='fan_out',nonlinearity='relu')
 
     def forward(self, x):
         self.backbone(x)
