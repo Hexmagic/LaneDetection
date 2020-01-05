@@ -167,7 +167,8 @@ class DeeplabV3Plus(Module):
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
-                                     Conv2d(256 + 48, 256, 1),
+                                     #Conv2d(256 + 48, 256, 1),
+                                     SparableConv(256+48,256),
                                      BatchNorm2d(256), ReLU(True),
                                      Conv2d(256, n_class, 1))
 
