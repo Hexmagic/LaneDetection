@@ -179,9 +179,15 @@ class DeeplabV3Plus(Module):
                                      BatchNorm2d(256), ReLU(True),
                                      SparableConv(256,n_class),
                                     )
+        self.weight_init()
         # self.projection2 = Sequential(
         #     BatchNorm2d()
         # )
+
+    def weight_init(self):
+        for m in self.modules():
+            if isinstance(m,Conv2d):
+                init.kaiming_normal_(m.weight.data)
 
     def forward(self, x):
         self.backbone(x)
