@@ -98,13 +98,14 @@ def train():
                 vloss = []
                 j = 0
                 for batch in tqdm(vloader,desc=f'{epoch} Valid'):
-                    x,y = batch
+                    a,b = batch
                     j+=1
                     if j>100:
                         break
-                    xv,yv = Variable(x).cuda(),Variable(y).cuda()
-                    yout = model(xv)
-                    loss = loss_func(yout,yv)
+                    X = a.cuda()
+                    Y = b.cuda()
+                    Yhat = model(X)
+                    loss = loss_func(Yhat,Y)
                     vloss.append(loss.item())
                 import pdb; pdb.set_trace()
                 print(f"Epoch {epoch} val loss {np.mean(vloss)}")
