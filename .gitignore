@@ -19,7 +19,7 @@ jbg/
 *.jpg
 # my ignore
 .vscode
-
+parameter.pkl
 .mypy_cache
 # C extensions
 *.so
