@@ -13,7 +13,7 @@ from torch.nn import BCELoss, BCEWithLogitsLoss, MultiLabelMarginLoss, NLLLoss
 from torch.optim import Adam, AdamW, RMSprop, ASGD
 from tqdm import tqdm
 from visdom import Visdom
-
+from model.unet import Unet
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import LanDataSet, get_train_loader, get_valid_loader
 from util.label_util import label_to_color_mask, mask_to_label
@@ -50,7 +50,7 @@ def encode(labels):
 
 def train():
 	#vis = Visdom()
-	model = DeeplabV3Plus(n_class=8).cuda()
+	model = Unet(n_class=8).cuda()
 	loss_func = BCEWithLogitsLoss().cuda()
 	opt = AdamW(params=model.parameters())
 	loader = get_train_loader()
@@ -110,20 +110,4 @@ def train():
 				#logger.info(f"Loss Value {loss.item()}")
 				loss.backward()
 				opt.step()
-			with torch.no_grad():
-				vloss = []
-				result = {"TP": {i:0 for i in range(8)}, "TA":{i:0 for i in range(8)}}
-				for batch in tqdm(vloader,desc=f'{epoch} Valid'):
-					a,b = batch
-					X = a.cuda()
-					Y = b.cuda()
-					Yhat = model(X)
-					pred = torch.sigmoid(Yhat)
-					loss = loss_func(Yhat,Y)
-					vloss.append(loss.item())
-					result = compute_iou(pred,Y,result)
-				print(f"Epoch {epoch} val loss {np.mean(vloss)}")
-				for i in range(8):
-					result_string = "{}: {:.4f} \n".format(i, result["TP"]/result["TA"])
-					print(result_string)         
 train()
