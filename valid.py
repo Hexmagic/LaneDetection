@@ -6,7 +6,7 @@ from tqdm import tqdm
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import get_test_loader
 from model.unet import Unet
-
+from collections import defaultdict
 
 def compute_iou(pred, gt, result):
 	"""
