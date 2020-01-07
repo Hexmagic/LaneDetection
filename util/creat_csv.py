@@ -10,7 +10,7 @@ CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 TEST_SIZE = 0.2
-DATA_ROOT = '/root/data/LaneSeg/'
+DATA_ROOT = 'D:/Compressed'
 
 
 class LaneDataFactory(object):
@@ -51,7 +51,7 @@ class LaneDataFactory(object):
     def getImageAndLabel(self, path: str) -> Tuple[List[str], List[str]]:
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
-        for ele in Path(os.path.join(self.root, path)).glob('*/*/*.jpg'):
+        for ele in Path(os.path.join(self.root, path)).glob('*/*/*/*/*.jpg'):
             imgName = ele.name
             road = path.split('/')[-1]
             labelParent = str(ele.parent).replace(
@@ -59,6 +59,7 @@ class LaneDataFactory(object):
             labelName = imgName.replace('.jpg', '_bin.png')
             if labelName in self.black:
                 logger.warning("Ignore Black Label")
+                continue
             labelPath = os.path.join(labelParent,
                                      imgName.replace(".jpg", "_bin.png"))
             if not os.path.exists(os.path.join(self.root, labelPath)):
