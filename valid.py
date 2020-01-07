@@ -43,7 +43,7 @@ def validLoss():
 		yout = torch.sigmoid(yout)
 		loss = loss_fuc(yout, yv)
 		loss_list.append(loss.item())
-		result = compute_iou(pred, gt, result)
+		result = compute_iou(yout, yv, result)
 	print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
 	for i in range(8):
 		print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
