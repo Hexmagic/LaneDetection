@@ -11,8 +11,11 @@ from util.datagener import get_test_loader, get_valid_loader, get_train_loader
 # os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 import numpy as np
 from visdom import Visdom
+import sys
 from util.label_util import label_to_color_mask
-device_list = [0]
+device_list = [5]
+plt = sys.platform
+
 
 def encode(labels):
     rst = []
@@ -20,14 +23,18 @@ def encode(labels):
         rst.append(label_to_color_mask(ele))
     return rst
 
-vis = Visdom()
+
+if plt =='win32':
+    vis = Visdom()
+
+
 def train_epoch(net, epoch, dataLoader, optimizer):
     net.train()
-    total_mask_loss =  []
+    total_mask_loss = []
     dataprocess = tqdm(dataLoader)
     i = 0
     for batch_item in dataprocess:
-        i +=1
+        i += 1
         image, mask = batch_item
         if torch.cuda.is_available():
             image, mask = image.cuda(device=device_list[0]), mask.cuda(
@@ -35,7 +42,9 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         optimizer.zero_grad()
         out = net(image)
         mask_loss = MySoftmaxCrossEntropyLoss(8)(out, mask.long())
-        if i%10==0:
+        if i % 10 == 0:
+            if plt!='win32':
+                continue
             _np = out.cpu().detach().numpy().copy(
             )  # output_np.shape (4, 2, 160, 160)
             output_np = np.argmax(_np, axis=1)
@@ -44,7 +53,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
             bag_msk_np = mask.cpu().detach().numpy().copy()
             #mask = np.argmax(bag_msk_np, axis=1)
             label = np.array(encode(bag_msk_np))
-            
+
             bag_msk_np = label.transpose((0, 3, 1, 2))
 
             vis.images(pred,
@@ -123,9 +132,7 @@ def main():
         test(net, epoch, val_data_batch)
         if epoch % 10 == 0:
             torch.save(
-                net,
-                os.path.join(os.getcwd(),
-                             "laneNet{}.pth".format(epoch)))
+                net, os.path.join(os.getcwd(), "laneNet{}.pth".format(epoch)))
     torch.save(net, os.path.join(os.getcwd(), "finalNet.pth"))
 
 
