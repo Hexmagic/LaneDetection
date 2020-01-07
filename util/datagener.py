@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader, Dataset
 import torch
 from util.label_util import mask_to_label
 from torchvision.transforms import ToTensor, Compose, Normalize, ColorJitter, ToPILImage
+from util.img_precessing import *
 
 
 def one_hot(img):
@@ -32,11 +33,17 @@ def crop_resize_data(image, label=None, image_size=[768, 256], offset=690):
 class LanDataSet(Dataset):
     def __init__(self, root: str = "", transform=None, *args, **kwargs):
         super(LanDataSet, self).__init__(*args, **kwargs)
-        self.transform = Compose([
-            ToPILImage(),
-            ColorJitter(contrast=0.4, saturation=0.4),
-            ToTensor(),
-        ])
+        self.transform = Compose(
+            [ImageAug(),
+             DeformAug(),
+             ScaleAug(),
+             CutOut(32, 0.5),
+             ToTensor()])  
+        # self.transform = Compose([
+        #     ToPILImage(),
+        #     ColorJitter(contrast=0.4, saturation=0.4),
+        #     ToTensor(),
+        # ])
         self.csv = pd.read_csv(root)
 
     def __len__(self):
@@ -48,7 +55,7 @@ class LanDataSet(Dataset):
         img = cv2.imread(img)
         mask = cv2.imread(mask, 0)
         img, mask = crop_resize_data(img, mask)
-        label =mask_to_label(mask).astype(np.float32)
+        label = mask_to_label(mask).astype(np.float32)
         #label = one_hot(label)
         if self.transform:
             img = self.transform(img)
