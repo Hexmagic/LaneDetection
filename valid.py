@@ -10,11 +10,15 @@ from collections import defaultdict
 import numpy as np
 
 
+
 def compute_iou(pred, gt, result):
     """
 	pred : [N, H, W]
 	gt: [N, H, W]
 	"""
+	import pdb; pdb.set_trace()
+	pred = torch.argmax(pred,dim=1)
+	gt = torch.argmax(gt,dim=1)
     pred = pred.detach().cpu().numpy()
     gt = gt.detach().cpu().numpy()
     for i in range(8):
