@@ -35,6 +35,9 @@ def validLoss():
     result = {"TP": defaultdict(int), "TA": defaultdict(int)}
     for batch in tqdm(test_loader):
         x, y = batch
+		i +=1
+		if i>100:
+			break
         xv, yv = Variable(x).cuda(), Variable(y).cuda()
         yout = model(xv)
         yout = torch.sigmoid(yout)
