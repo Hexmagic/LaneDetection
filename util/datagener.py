@@ -58,7 +58,7 @@ class LanDataSet(Dataset):
         label = mask_to_label(mask).astype(np.float32)
         #label = one_hot(label)
         if self.transform:
-            img = self.transform(img)
+            img = self.transform([img,label])
         return img, torch.from_numpy(label)
 
 
