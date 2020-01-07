@@ -5,7 +5,7 @@ import cv2
 import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
-
+import json
 CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
@@ -17,14 +17,13 @@ class LaneDataFactory(object):
     '''
     获取所有的图片和对应的label位置，并按照比例割训练集和验证集，测试集
     '''
-
     def __init__(self):
         self.root = DATA_ROOT
+        self.black = json.load(open('util/empty.json', 'r'))
 
     def saveCSV(self, name, imgs: List[str], labels: List[str]):
-        dataFram = pd.DataFrame({'img': imgs,
-                                 'label': labels})
-        dataFram.to_csv(os.path.join(CSV_PATH, name),index=False)
+        dataFram = pd.DataFrame({'img': imgs, 'label': labels})
+        dataFram.to_csv(os.path.join(CSV_PATH, name), index=False)
 
     def dump(self) -> None:
         '''保存训练测试验证的路径到csv文件'''
@@ -42,8 +41,8 @@ class LaneDataFactory(object):
         shuffle(imgs, labels)
         # 获取切分的索引
         length = len(imgs)
-        i = int(length*TRAIN_SIZE)
-        j = i+int(length*TEST_SIZE)
+        i = int(length * TRAIN_SIZE)
+        j = i + int(length * TEST_SIZE)
         # 返回训练集验证集和测试集
         self.saveCSV('train.csv', imgs[:i], labels[:i])
         self.saveCSV('test.csv', imgs[i:j], labels[i:j])
@@ -55,14 +54,17 @@ class LaneDataFactory(object):
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*.jpg'):
             imgName = ele.name
             road = path.split('/')[-1]
-            labelParent = str(ele.parent).replace(path, f'Gray_Label/Label_{road.lower()}/Label'
-            )
-            labelPath = os.path.join(labelParent,imgName.replace(".jpg","_bin.png"))
+            labelParent = str(ele.parent).replace(
+                path, f'Gray_Label/Label_{road.lower()}/Label')
+            labelName = imgName.replace('.jpg', '_bin.png')
+            if labelName in self.black:
+                logger.warning("Ignore Black Label")
+            labelPath = os.path.join(labelParent,
+                                     imgName.replace(".jpg", "_bin.png"))
             if not os.path.exists(os.path.join(self.root, labelPath)):
                 continue
             img_list.append(str(ele))
-            label_list.append(
-                os.path.join(self.root, labelPath))
+            label_list.append(os.path.join(self.root, labelPath))
         return img_list, label_list
 
 
