@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from typing import List, Tuple
 import cv2
+import sys
 import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
@@ -11,7 +12,7 @@ TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 TEST_SIZE = 0.2
 DATA_ROOT = 'D:/Compressed'
-
+PLAT =sys.platform
 
 class LaneDataFactory(object):
     '''
@@ -51,9 +52,9 @@ class LaneDataFactory(object):
     def getImageAndLabel(self, path: str) -> Tuple[List[str], List[str]]:
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
+        road = path.split('/')[-1]
         for ele in Path(os.path.join(self.root, path)).glob('*/*/*/*/*.jpg'):
             imgName = ele.name
-            road = path.split('/')[-1]
             labelParent = str(ele.parent).replace(
                 path, f'Gray_Label/Label_{road.lower()}/Label')
             labelName = imgName.replace('.jpg', '_bin.png')
@@ -62,10 +63,16 @@ class LaneDataFactory(object):
                 continue
             labelPath = os.path.join(labelParent,
                                      imgName.replace(".jpg", "_bin.png"))
-            if not os.path.exists(os.path.join(self.root, labelPath)):
+            if PLAT =='win32':
+                path = labelPath.replace("Image_Data","Gray_Label")
+                path = path.replace(road,f'Label_{road.lower()}')
+                path = path.replace(f'ColorImage_{road.lower()}\\ColorImage','Label')
+            else:
+                os.path.join(self.root, labelPath)
+            if not os.path.exists(path):
                 continue
             img_list.append(str(ele))
-            label_list.append(os.path.join(self.root, labelPath))
+            label_list.append(path)
         return img_list, label_list
 
 

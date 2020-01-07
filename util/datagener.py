@@ -48,8 +48,8 @@ class LanDataSet(Dataset):
         img = cv2.imread(img)
         mask = cv2.imread(mask, 0)
         img, mask = crop_resize_data(img, mask)
-        label = mask_to_label(mask)
-        label = one_hot(label)
+        label =mask_to_label(mask).astype(np.float32)
+        #label = one_hot(label)
         if self.transform:
             img = self.transform(img)
         return img, torch.from_numpy(label)
