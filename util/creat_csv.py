@@ -7,8 +7,8 @@ from sklearn.utils import shuffle
 from logzero import logger
 
 CSV_PATH = 'data_list'
-TRAIN_SIZE = 0.6
-VALID_SIZE = 0.2
+TRAIN_SIZE = 0.7
+VALID_SIZE = 0.1
 TEST_SIZE = 0.2
 DATA_ROOT = '/root/data/LaneSeg/'
 
