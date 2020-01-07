@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import Dataset
 from imgaug import augmenters as iaa
-from utils.process_labels import encode_labels, decode_labels, decode_color_labels
+from util.process_labels import encode_labels, decode_labels, decode_color_labels
 
 
 sometimes = lambda aug: iaa.Sometimes(0.5, aug)
