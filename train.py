@@ -145,7 +145,7 @@ from torch.nn import DataParallel
 
 
 def main():
-    train_data_batch = get_train_loader()
+    train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
     net = DeeplabV3Plus(n_class=8).cuda()
     #net = DataParallel(net, device_ids=[3, 7])
