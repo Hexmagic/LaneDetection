@@ -18,7 +18,8 @@ class SparableConv(Module):
                    padding=padding,
                    groups=in_channel,
                    stride=stride,
-                   dilation=dilation)
+                   dilation=dilation,
+                   bias=False)
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
@@ -141,9 +142,9 @@ class SepAspPooling(Module):
             # BatchNorm2d(out_channel),
             ReLU(True))
 
-        self.projection = Sequential(Conv2d(256 * 5, out_channel, 1),
-                                     BatchNorm2d(out_channel),
-                                     ReLU(True))  # 映射回原来的深度
+        self.projection = Sequential(
+            Conv2d(256 * 5, out_channel, 1, bias=False),
+            BatchNorm2d(out_channel), ReLU(True))  # 映射回原来的深度
 
     def forward(self, x):
         conv_rsts = [
@@ -167,9 +168,14 @@ class DeeplabV3Plus(Module):
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
-                                     Conv2d(256 + 48, 256, 1),
+                                     Conv2d(256 + 48, 256, 1, bias=False),
                                      BatchNorm2d(256), ReLU(True),
-                                     Conv2d(256, n_class, 1))
+                                     Conv2d(256, n_class, 1, bias=False))
+        self.up1 = UpsamplingBilinear2d(scale_factor=4)
+        self.up2 = UpsamplingBilinear2d(scale_factor=4)
+        for n in self.modules:
+            if isinstance(n, Conv2d):
+                init.kaiming_normal_(n.weight.data)
 
     def forward(self, x):
         self.backbone(x)
@@ -177,15 +183,9 @@ class DeeplabV3Plus(Module):
         low_feature = self.backbone.entry_0_out
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
-
-        h, w = low_feature.size()[2:]
-        feature_map = Upsample((h, w), mode='bilinear',
-                               align_corners=True)(feature_map)
+        feature_map = self.up1(feature_map)
         feature_map = torch.cat([low_feature, feature_map], dim=1)
-
-        h, w = x.size()[2:]
-        feature_map = Upsample((h, w), mode='bilinear',
-                               align_corners=True)(feature_map)
+        feature_map = self.up2(feature_map)
         return self.projection(feature_map)
 
 
