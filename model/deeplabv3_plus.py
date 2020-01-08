@@ -175,7 +175,7 @@ class DeeplabV3Plus(Module):
         self.up2 = UpsamplingBilinear2d(scale_factor=4)
         for n in self.modules():
             if isinstance(n, Conv2d):
-                init.kaiming_normal_(n.weight.data)
+                init.kaiming_normal_(n.weight.data,mode='fan_out')
 
     def forward(self, x):
         self.backbone(x)
