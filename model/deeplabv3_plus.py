@@ -173,7 +173,7 @@ class DeeplabV3Plus(Module):
                                      Conv2d(256, n_class, 1, bias=False))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = UpsamplingBilinear2d(scale_factor=4)
-        for n in self.modules:
+        for n in self.modules():
             if isinstance(n, Conv2d):
                 init.kaiming_normal_(n.weight.data)
 
