@@ -22,9 +22,9 @@ from util.metric import compute_iou
 
 plt = sys.platform
 
-#ava_gpu_index = wait_gpu(need=5)
-#torch.cuda.set_device(ava_gpu_index)
-ids = [3, 7]
+ava_gpu_index = wait_gpu(need=5)
+torch.cuda.set_device(ava_gpu_index)
+#ids = [3, 7]
 
 
 def encode(labels):
@@ -43,15 +43,15 @@ def train_epoch(net, epoch, dataLoader, optimizer):
     net.train()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
-    loss_func1 = BCEWithLogitsLoss().cuda(device=ids[0])
-    loss_func2 = DiceLoss().cuda(device=ids[0])
+    loss_func1 = BCEWithLogitsLoss().cuda()
+    loss_func2 = DiceLoss().cuda()
     i = 0
     for batch_item in dataprocess:
         i += 1
         image, mask = batch_item
         if torch.cuda.is_available():
             image, mask = Variable(image).cuda(
-                device=ids[0]), Variable(mask).cuda(device=ids[0])
+                ), Variable(mask).cuda()
         optimizer.zero_grad()
         out = net(image)
         #print('1')
@@ -97,13 +97,13 @@ def test(net, epoch, dataLoader):
     net.eval()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
-    loss_func1 = BCEWithLogitsLoss().cuda(device=ids[0])
-    loss_func2 = DiceLoss().cuda(device=ids[0])
+    loss_func1 = BCEWithLogitsLoss().cuda()
+    loss_func2 = DiceLoss().cuda()
     result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
     for batch_item in dataprocess:
         image, mask = batch_item
         if torch.cuda.is_available():
-            image, mask = Variable(image).cuda(device=ids[0]), Variable(mask,device=ids[0]).cuda()
+            image, mask = Variable(image).cuda(), Variable(mask,).cuda()
         out = net(image)
         loss1 = loss_func1(out, mask)
         loss2 = loss_func2(out, mask)
@@ -147,8 +147,8 @@ from torch.nn import DataParallel
 def main():
     train_data_batch = get_train_loader()
     val_data_batch = get_valid_loader()
-    net = DeeplabV3Plus(n_class=8)
-    net = DataParallel(net, device_ids=[3, 7])
+    net = DeeplabV3Plus(n_class=8).cuda()
+    #net = DataParallel(net, device_ids=[3, 7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
