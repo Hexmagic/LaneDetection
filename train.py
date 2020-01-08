@@ -138,11 +138,12 @@ def adjust_lr(optimizer, epoch):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 
-
+from torch.nn import DataParallel
 def main():
     train_data_batch = get_train_loader()
     val_data_batch = get_valid_loader()
     net = DeeplabV3Plus(n_class=8).cuda()
+    net = DataParallel(net,device_ids=[0,7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
