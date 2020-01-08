@@ -2,8 +2,9 @@ import sys
 import time
 from datetime import datetime
 
-import pynvml
 from termcolor import colored
+
+import pynvml
 
 
 def wait_gpu(need=4, sleep=5):

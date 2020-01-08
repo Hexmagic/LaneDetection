@@ -124,17 +124,15 @@ def test(net, epoch, dataLoader):
 
 def adjust_lr(optimizer, epoch):
     if epoch == 0:
-        lr = 1e-3
+        lr = 2e-3
     elif epoch == 1:
-        lr = 5e-4
-    elif epoch == 5:
         lr = 7e-4
-    elif epoch == 15:
+    elif epoch == 5:
         lr = 6e-4
-    elif epoch == 100:
-        lr = 1e-3
-    elif epoch == 150:
-        lr = 1e-4
+    elif epoch == 10:
+        lr = 5e-4
+    elif epoch == 15:
+        lr = 7e-4
     else:
         return
     for param_group in optimizer.param_groups:

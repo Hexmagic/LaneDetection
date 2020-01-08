@@ -166,16 +166,18 @@ class DeeplabV3Plus(Module):
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
+        self.d1 = Dropout(0.3)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
                                      Conv2d(256 + 48, 256, 1, bias=False),
                                      BatchNorm2d(256), ReLU(True),
+                                     Dropout(0.3),
                                      Conv2d(256, n_class, 1, bias=False))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = UpsamplingBilinear2d(scale_factor=4)
         for n in self.modules():
             if isinstance(n, Conv2d):
-                init.kaiming_normal_(n.weight.data,mode='fan_out')
+                init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
         self.backbone(x)
@@ -185,6 +187,7 @@ class DeeplabV3Plus(Module):
         low_feature = self.low_projection(low_feature)
         feature_map = self.up1(feature_map)
         feature_map = torch.cat([low_feature, feature_map], dim=1)
+        feature_map = self.d1(feature_map)
         feature_map = self.up2(feature_map)
         return self.projection(feature_map)
 
