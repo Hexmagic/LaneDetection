@@ -11,7 +11,7 @@ CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 TEST_SIZE = 0.2
-DATA_ROOT = 'D:/Compressed'
+DATA_ROOT = '/root/data/LaneSeg'
 PLAT =sys.platform
 
 class LaneDataFactory(object):
@@ -53,7 +53,8 @@ class LaneDataFactory(object):
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
         road = path.split('/')[-1]
-        for ele in Path(os.path.join(self.root, path)).glob('*/*/*/*/*.jpg'):
+        pt = Path(os.path.join(self.root,path))
+        for ele in pt.glob('*/*/*.jpg'):
             imgName = ele.name
             labelParent = str(ele.parent).replace(
                 path, f'Gray_Label/Label_{road.lower()}/Label')
@@ -68,8 +69,11 @@ class LaneDataFactory(object):
                 path = path.replace(road,f'Label_{road.lower()}')
                 path = path.replace(f'ColorImage_{road.lower()}\\ColorImage','Label')
             else:
-                os.path.join(self.root, labelPath)
+                path=os.path.join(self.root, labelPath)
+                path=path.replace("Image_Data","Gray_Label")
+                path=path.replace(road,f'Label_{road.lower()}/Label')
             if not os.path.exists(path):
+                import pdb;pdb.set_trace()
                 continue
             img_list.append(str(ele))
             label_list.append(path)

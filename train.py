@@ -1,130 +1,132 @@
-import logging
-import os
-
-import cv2
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from logzero import setup_logger
-from torch.autograd import Variable
-from torch.nn import BCELoss, BCEWithLogitsLoss, MultiLabelMarginLoss, NLLLoss
-from torch.optim import Adam, AdamW, RMSprop, ASGD
 from tqdm import tqdm
-from visdom import Visdom
-from model.unet import Unet
+import torch
+import os
+import shutil
+from util.metric import compute_iou
+import torch.nn.functional as F
+from torchvision import transforms
+from util.loss import MySoftmaxCrossEntropyLoss
 from model.deeplabv3_plus import DeeplabV3Plus
-from util.datagener import LanDataSet, get_train_loader, get_valid_loader
-from util.label_util import label_to_color_mask, mask_to_label
-
-torch.cuda.set_device(6)
-
-if not os.path.exists("log"):
-    os.mkdir("log")
-
+from util.datagener import get_test_loader, get_valid_loader, get_train_loader
+# os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 import numpy as np
-
-
-def compute_iou(pred, gt, result):
-    """
-	pred : [N, H, W]
-	gt: [N, H, W]
-	"""
-    pred = torch.argmax(pred, dim=1)
-    gt = torch.argmax(gt, dim=1)
-    pred = pred.detach().cpu().numpy()
-    gt = gt.detach().cpu().numpy()
-    for i in range(8):
-        single_gt = gt == i
-        single_pred = pred == i
-        temp_tp = np.sum(single_gt * single_pred)
-        temp_ta = np.sum(single_pred) + np.sum(single_gt) - temp_tp
-        result["TP"][i] += temp_tp
-        result["TA"][i] += temp_ta
-    return result
+from visdom import Visdom
+import sys
+from util.label_util import label_to_color_mask
+plt = sys.platform
+torch.cuda.set_device(0)
 
 
 def encode(labels):
-    label = labels[0]
-    msk = label_to_color_mask(label)
-    return msk
+    rst = []
+    for i, ele in enumerate(labels):
+        rst.append(label_to_color_mask(ele))
+    return rst
 
 
-def train():
-    #vis = Visdom()
-    model = Unet(n_class=8).cuda()
-    loss_func = BCEWithLogitsLoss().cuda()
-    opt = AdamW(params=model.parameters())
-    loader = get_train_loader()
-    vloader = get_valid_loader()
+if plt =='win32':
+    vis = Visdom()
 
-    def adjust_learning_rate(optimizer, epoch):
-        if epoch < 3:
-            lr = 0.001
-        else:
-            lr = 0.003 / (epoch // 2)
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
+from torch.autograd import Variable
 
-    with open('loss.log', 'w') as f:
-        for epoch in range(10):
-            i = 0
-            loss_list = []
-            adjust_learning_rate(opt, epoch + 1)
-            for batch in tqdm(loader, desc=f"Epoch {epoch} Train"):
-                i += 1
-                x, y = batch
-                xv, yv = Variable(x).cuda(), Variable(y).cuda()
-                yout = model(xv)
-                #yout = torch.sigmoid(yhat) 如果用BCELoss需要取消注释
-                opt.zero_grad()
-                loss = loss_func(yout, yv)
-                if i % 1000 == 0:
-                    torch.save(model.state_dict(), 'parameter.pkl')
-                if i % 10 == 0:
-                    print(f"Epoch {epoch} batch {i} loss {np.mean(loss_list)}")
-                    #continue
-                    # yout = torch.sigmoid(yout)
-                    # output_np = yout.cpu().detach().numpy().copy(
-                    # )  # output_np.shape = (4, 2, 160, 160)
-                    # output_np = np.argmax(output_np, axis=1)
-                    # bag_msk_np = yv.cpu().detach().numpy().copy(
-                    # )  # bag_msk_np.shape = (4, 2, 160, 160)
-                    # msk = encode(output_np)
-                    # mask = np.argmax(bag_msk_np, axis=1)
-                    # label = encode(mask)
+def train_epoch(net, epoch, dataLoader, optimizer):
+    net.train()
+    total_mask_loss = []
+    dataprocess = tqdm(dataLoader)
+    i = 0
+    for batch_item in dataprocess:
+        i += 1
+        image, mask = batch_item
+        if torch.cuda.is_available():
+            image, mask = Variable(image['image']).cuda(), Variable(mask).cuda()
+        optimizer.zero_grad()
+        out = net(image)
+        mask_loss = MySoftmaxCrossEntropyLoss(8)(out, mask.long())
+        if i % 10 == 0:
+            if plt!='win32':
+                continue
+            _np = out.cpu().detach().numpy().copy(
+            )  # output_np.shape (4, 2, 160, 160)
+            output_np = np.argmax(_np, axis=1)
+            pred = np.array(encode(output_np))
+            pred = pred.transpose((0, 3, 1, 2))
+            bag_msk_np = mask.cpu().detach().numpy().copy()
+            #mask = np.argmax(bag_msk_np, axis=1)
+            label = np.array(encode(bag_msk_np))
 
-                    # msk = np.array([msk.transpose((2, 0, 1))])
-                    # bag_msk_np = np.array([label.transpose((2, 0, 1))])
-                    # vis.images(msk,
-                    # 		   win='train_pred',
-                    # 		   opts=dict(title='train prediction'))
-                    # vis.images(bag_msk_np,
-                    # 		   win='train_label',
-                    # 		   opts=dict(title='train prediction'))
-                    # vis.line(loss_list,
-                    # 		 win='train_iter_loss',
-                    # 		 opts=dict(title='train iter loss'))
+            bag_msk_np = label.transpose((0, 3, 1, 2))
 
-                loss_list.append(loss.item())
-                f.write(str(loss.item()) + '\n')
-                #logger.info(f"Loss Value {loss.item()}")
-                loss.backward()
-                opt.step()
-            result = {"TP": defaultdict(int), "TA": defaultdict(int)}
-            for batch in tqdm(vloader):
-                x, y = batch
-                i += 1
-                xv, yv = Variable(x).cuda(), Variable(y).cuda()
-                yout = model(xv)
-                yout = torch.sigmoid(yout)
-                loss = loss_fuc(yout, yv)
-                loss_list.append(loss.item())
-                result = compute_iou(yout, yv, result)
-            print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
-            for i in range(8):
-                print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
+            vis.images(pred,
+                       win='train_pred',
+                       opts=dict(title='train prediction'))
+            vis.images(bag_msk_np,
+                       win='train_label',
+                       opts=dict(title='train prediction'))
+            vis.line(total_mask_loss,
+                     win='train_iter_loss',
+                     opts=dict(title='train iter loss'))
+        total_mask_loss.append(mask_loss.item())
+        mask_loss.backward()
+        optimizer.step()
+        dataprocess.set_description_str("epoch:{}".format(epoch))
+        dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
+            np.mean(total_mask_loss)))
 
 
-train()
+def test(net, epoch, dataLoader):
+    net.eval()
+    total_mask_loss = []
+    dataprocess = tqdm(dataLoader)
+    result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
+    for batch_item in dataprocess:
+        image, mask = batch_item
+        if torch.cuda.is_available():
+            image, mask =  Variable(image['image']).cuda(),Variable(mask).cuda()
+        out = net(image)
+        mask_loss = MySoftmaxCrossEntropyLoss(nbclasses=8)(out, mask.long())
+        total_mask_loss.append(mask_loss.detach().item())
+        pred = torch.argmax(F.softmax(out, dim=1), dim=1)
+        result = compute_iou(pred, mask, result)
+        dataprocess.set_description_str("epoch:{}".format(epoch))
+        dataprocess.set_postfix_str("mask_loss:{:.4f}".format(np.mean(total_mask_loss)))
+
+    for i in range(8):
+        result_string = "{}: {:.4f} \n".format(
+            i, result["TP"][i] / result["TA"][i])
+        print(result_string)
+
+
+def adjust_lr(optimizer, epoch):
+    if epoch == 10:
+        lr = 5e-4
+    elif epoch == 15:
+        lr = 6e-4
+    elif epoch == 100:
+        lr = 1e-3
+    elif epoch == 150:
+        lr = 1e-4
+    else:
+        return
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
+
+def main():
+    train_data_batch = get_train_loader()
+    val_data_batch = get_valid_loader()
+    net = DeeplabV3Plus(n_class=8).cuda()
+    # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
+    #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
+    optimizer = torch.optim.Adam(net.parameters(),lr=0.0006)
+    for epoch in range(40):
+        adjust_lr(optimizer, epoch)
+        train_epoch(net, epoch, train_data_batch, optimizer)
+        test(net, epoch, val_data_batch)
+        if epoch % 10 == 0:
+            torch.save(
+                net, os.path.join(os.getcwd(), "laneNet{}.pth".format(epoch)))
+    torch.save(net, os.path.join(os.getcwd(), "finalNet.pth"))
+
+
+if __name__ == "__main__":
+    main()
