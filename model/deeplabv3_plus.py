@@ -166,40 +166,27 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
-        self.projection = Sequential(Conv2d(256 + 48,
-                                            256, 1), BatchNorm2d(256),
-                                     ReLU(True), Dropout(0.5),
-                                     Conv2d(256, 256, 1), BatchNorm2d(256),
-                                     ReLU(True), Dropout(0.5),
+        self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
+                                     Conv2d(256 + 48, 256, 1),
+                                     BatchNorm2d(256), ReLU(True),
                                      Conv2d(256, n_class, 1))
-        self.drop1 = Dropout(0.5)
-        for m in self.modules():
-            if isinstance(m, Conv2d):
-                init.kaiming_normal_(m.weight.data,
-                                     mode='fan_out',
-                                     nonlinearity='relu')
-            elif isinstance(m, BatchNorm2d):
-                init.constant_(m.weight, 1)
-                init.constant_(m.bias, 0)
 
     def forward(self, x):
         self.backbone(x)
         feature_map = self.backbone.exit_out
         low_feature = self.backbone.entry_0_out
         feature_map = self.aspp(feature_map)
-        feature_map = self.drop1(feature_map)
-        
         low_feature = self.low_projection(low_feature)
 
         h, w = low_feature.size()[2:]
         feature_map = Upsample((h, w), mode='bilinear',
                                align_corners=True)(feature_map)
         feature_map = torch.cat([low_feature, feature_map], dim=1)
-        feature_map = self.projection(feature_map)
+
         h, w = x.size()[2:]
         feature_map = Upsample((h, w), mode='bilinear',
                                align_corners=True)(feature_map)
-        return feature_map
+        return self.projection(feature_map)
 
 
 if __name__ == "__main__":
