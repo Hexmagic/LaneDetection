@@ -55,7 +55,7 @@ class LanDataSet(Dataset):
         img, mask = crop_resize_data(img, mask)
         if self.transform:
             samp = self.transform([img, mask])
-        img, mask = samp['image'], samp['mask']
+        img, mask = samp['image']/255., samp['mask']
         label = mask_to_label(mask)
         label = one_hot(label)
         return img, torch.from_numpy(label)
