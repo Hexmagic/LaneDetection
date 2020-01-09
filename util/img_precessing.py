@@ -30,32 +30,6 @@ def crop_resize_data(image, label=None, image_size=(1024, 384), offset=690):
         return train_image
 
 
-class LaneDataset(Dataset):
-
-    def __init__(self, csv_file, transform=None):
-        super(LaneDataset, self).__init__()
-        self.data = pd.read_csv(os.path.join(os.getcwd(), "data_list", csv_file), header=None,
-                                  names=["image","label"])
-        self.images = self.data["image"].values[1:]
-        self.labels = self.data["label"].values[1:]
-
-        self.transform = transform
-
-    def __len__(self):
-        return self.labels.shape[0]
-
-    def __getitem__(self, idx):
-
-        ori_image = cv2.imread(self.images[idx])
-        ori_mask = cv2.imread(self.labels[idx], cv2.IMREAD_GRAYSCALE)
-        train_img, train_mask = crop_resize_data(ori_image, ori_mask)
-        # Encode
-        train_mask = encode_labels(train_mask)
-        sample = [train_img.copy(), train_mask.copy()]
-        if self.transform:
-            sample = self.transform(sample)
-        return sample
-
 
 # pixel augmentation
 class ImageAug(object):
@@ -64,13 +38,13 @@ class ImageAug(object):
         if np.random.uniform(0,1) > 0.5:
             seq = iaa.Sequential([iaa.OneOf([
                 iaa.AdditiveGaussianNoise(scale=(0, 0.2 * 255)),
-                iaa.Sharpen(alpha=(0.1, 0.3), lightness=(0.7, 1.3)),
-                iaa.GaussianBlur(sigma=(0, 1.0))])])
+                iaa.Sharpen(alpha=(0.1, 0.3), lightness=(0.7,1.3 )),
+                iaa.GaussianBlur(sigma=(0, 0.8))])])
             image = seq.augment_image(image)
         return image, mask
 
 
-# deformation augmentation
+#deformation augmentation
 class DeformAug(object):
     def __call__(self, sample):
         image, mask = sample

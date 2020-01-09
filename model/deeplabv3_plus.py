@@ -169,9 +169,10 @@ class DeeplabV3Plus(Module):
         self.d1 = Dropout(0.3)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
+                                     Dropout(0.4),
                                      Conv2d(256 + 48, 256, 1, bias=False),
                                      BatchNorm2d(256), ReLU(True),
-                                     Dropout(0.3),
+                                     Dropout(0.4),
                                      Conv2d(256, n_class, 1, bias=False))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = UpsamplingBilinear2d(scale_factor=4)
@@ -190,10 +191,3 @@ class DeeplabV3Plus(Module):
         feature_map = self.d1(feature_map)
         feature_map = self.up2(feature_map)
         return self.projection(feature_map)
-
-
-if __name__ == "__main__":
-    data = torch.rand((1, 3, 399, 399))
-    model = DeeplabV3Plus(n_class=20)
-    rst = model(data)
-    print(rst.shape)

@@ -50,8 +50,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         i += 1
         image, mask = batch_item
         if torch.cuda.is_available():
-            image, mask = Variable(image).cuda(
-                ), Variable(mask).cuda()
+            image, mask = Variable(image).cuda(), Variable(mask).cuda()
         optimizer.zero_grad()
         out = net(image)
         #print('1')
@@ -72,16 +71,15 @@ def train_epoch(net, epoch, dataLoader, optimizer):
             #output_np = np.argmax(_np, axis=1)
             pred = np.array(encode(_np))
             pred = pred.transpose((0, 3, 1, 2))
+
             bag_msk_np = mask.cpu().detach().numpy().copy()
             #mask = np.argmax(bag_msk_np, axis=1)
             label = np.array(encode(bag_msk_np))
             bag_msk_np = label.transpose((0, 3, 1, 2))
-            vis.images(pred,
-                       win='train_pred',
-                       opts=dict(title='train prediction'))
-            vis.images(bag_msk_np,
-                       win='train_label',
-                       opts=dict(title='train prediction'))
+
+            vis.images(pred, win='Pred', opts=dict(title='pred'))
+            vis.images(bag_msk_np, win='GroudTruth', opts=dict(title='label'))
+            vis.images(image, win='Image', opts=dict(title='colorimg'))
             vis.line(total_mask_loss,
                      win='train_iter_loss',
                      opts=dict(title='train iter loss'))
@@ -89,7 +87,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         #mask_loss.backward()
         optimizer.step()
         dataprocess.set_description_str("epoch:{}".format(epoch))
-        dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
+        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
             np.mean(total_mask_loss)))
 
 
@@ -99,11 +97,12 @@ def test(net, epoch, dataLoader):
     dataprocess = tqdm(dataLoader)
     loss_func1 = BCEWithLogitsLoss().cuda()
     loss_func2 = DiceLoss().cuda()
+    MIOU = 0.0
     result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
     for batch_item in dataprocess:
         image, mask = batch_item
         if torch.cuda.is_available():
-            image, mask = Variable(image).cuda(), Variable(mask,).cuda()
+            image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
         out = net(image)
         loss1 = loss_func1(out, mask)
         loss2 = loss_func2(out, mask)
@@ -122,6 +121,8 @@ def test(net, epoch, dataLoader):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])
         print(result_string)
+        MIOU += result["TP"][i] / result["TA"][i]
+    return MIOU / 8
 
 
 def adjust_lr(optimizer, epoch):
@@ -130,9 +131,9 @@ def adjust_lr(optimizer, epoch):
     elif epoch == 1:
         lr = 7e-4
     elif epoch == 5:
-        lr = 6e-4
+        lr = 8e-4
     elif epoch == 10:
-        lr = 5e-4
+        lr = 9e-4
     elif epoch == 15:
         lr = 7e-4
     else:
@@ -152,11 +153,14 @@ def main():
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
+    last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, train_data_batch, optimizer)
-        test(net, epoch, val_data_batch)
-        torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
+        miou = test(net, epoch, val_data_batch)
+        if miou > last_MIOU:
+            print(f"miou {miou} > last_MIOU {last_MIOU},save model")
+            torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
 
 
 if __name__ == "__main__":
