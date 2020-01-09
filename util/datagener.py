@@ -4,8 +4,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 import torch
 from util.label_util import mask_to_label
-from torchvision.transforms import Compose  #, ToTensor,Normalize, ColorJitter, ToPILImage
-from util.img_precessing import *
+from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage, RandomGrayscale, RandomErasing
 
 
 def one_hot(img):
@@ -34,13 +33,10 @@ class LanDataSet(Dataset):
     def __init__(self, root: str = "", transform=None, *args, **kwargs):
         super(LanDataSet, self).__init__(*args, **kwargs)
         self.transform = Compose([
-            #DeformAug(),
-            ScaleAug(),
-            ImageAug(),
-            CutOut(32, 0.5),
-            #ToPILImage(),
-            #ColorJitter(brightness=0.4,contrast=0.3,saturation=0.3),
-            ToTensor()
+            ToPILImage(),
+            ColorJitter(brightness=0.4, contrast=0.3),
+            ToTensor(),
+            RandomErasing(scale=(0.02, 0.1), ratio=(0.3, 1)),
         ])
         self.csv = pd.read_csv(root)
 
@@ -54,8 +50,7 @@ class LanDataSet(Dataset):
         mask = cv2.imread(mask, 0)
         img, mask = crop_resize_data(img, mask)
         if self.transform:
-            samp = self.transform([img, mask])
-        img, mask = samp['image']/255., samp['mask']
+            img = self.transform(img)
         label = mask_to_label(mask)
         label = one_hot(label)
         return img, torch.from_numpy(label)
