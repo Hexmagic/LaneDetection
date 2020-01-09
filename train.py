@@ -104,10 +104,11 @@ def test(net, epoch, dataLoader):
         if torch.cuda.is_available():
             image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
         out = net(image)
+
         loss1 = loss_func1(out, mask)
         loss2 = loss_func2(out, mask)
         #loss2 = DiceLoss()(out, mask)
-        mask_loss = loss1 + loss2
+        mask_loss = 0.7 * loss1 + 0.3 * loss2
         #mask_loss = MySoftmaxCrossEntropyLoss(nbclasses=8)(out, mask.long())
         total_mask_loss.append(mask_loss.detach().item())
         pred = torch.argmax(F.softmax(out, dim=1), dim=1)
@@ -161,6 +162,7 @@ def main():
         if miou > last_MIOU:
             print(f"miou {miou} > last_MIOU {last_MIOU},save model")
             torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
+            last_MIOU = miou
 
 
 if __name__ == "__main__":
