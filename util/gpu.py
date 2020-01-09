@@ -20,12 +20,17 @@ def wait_gpu(need=4, sleep=5):
     stext = colored("Waiting GPU...", color="yellow", attrs=["blink"])
     gpus = [pynvml.nvmlDeviceGetHandleByIndex(index) for index in range(cnt)]
     while True:
+        ids = []
         for i, gpu in enumerate(gpus):
             info = pynvml.nvmlDeviceGetMemoryInfo(gpu)
             free = info.free / G
             if free > need:
                 print(f"Find GPU {i} Has Free Memory {free}G")
-                return i
+                ids.append(i)
+                #return i
+        if ids:
+            ids.sort()
+            return ids[0]
         sys.stdout.write('\r')
         sys.stdout.flush()
         date = datetime.now().strftime('%m-%d %H:%M:%S')
