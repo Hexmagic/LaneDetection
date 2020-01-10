@@ -43,11 +43,10 @@ def validLoss():
         net = torch.load('laneNet.pth')
         net.eval()
         total_mask_loss = []
-        dataLoader = get_test_loader()
+        dataLoader = get_test_loader(batch_size=1)
         dataprocess = tqdm(dataLoader)
         loss_func1 = BCEWithLogitsLoss().cuda()
         loss_func2 = DiceLoss().cuda()
-        MIOU = 0.0
         result = {
             "TP": {i: 0
                    for i in range(8)},
