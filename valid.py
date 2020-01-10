@@ -45,7 +45,7 @@ def compute_iou(pred, gt, result):
 
 def validLoss():
 	loss_fuc = BCELoss().cuda()
-	model = torch.load('laneNet10.pth').cuda()
+	model = torch.load('laneNet.pth').cuda()
 	test_loader = get_test_loader()
 	loss_list = []
 	i = 0
@@ -79,8 +79,10 @@ def validLoss():
 		loss_list.append(loss.item())
 		result = compute_iou(yout, yv, result)
 	print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
+	MIOU = 0.0
 	for i in range(8):
 		print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
-
+		MIOU += result["TP"][i] / result["TA"][i]
+	print(f"MIOU {MIOU}")
 
 validLoss()
