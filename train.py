@@ -179,7 +179,7 @@ def main():
         optimizer = torch.optim.AdamW(net.parameters())
     else:
         adjust_lr = adjust_lr2
-        optimizer = torch.optim.Adam(net.parameters(),lr=0.0001,momentum=0.2)
+        optimizer = torch.optim.Adam(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
