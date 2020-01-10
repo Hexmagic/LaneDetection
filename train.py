@@ -13,6 +13,7 @@ from tqdm import tqdm
 from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
+from model.deeplabv3p import DeepLabV3P
 from util.creat_csv import dump
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -152,7 +153,7 @@ def main():
     if os.path.exists('laneNet.pth'):
         net = torch.load('laneNet.pth')
     else:
-        net = DeeplabV3Plus(n_class=8).cuda()
+        net = DeepLabV3P(n_class=8).cuda()
     #net = DataParallel(net, device_ids=[3, 7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
