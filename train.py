@@ -26,7 +26,7 @@ dump()
 
 plt = sys.platform
 
-ava_gpu_index = wait_gpu(need=5)
+ava_gpu_index = wait_gpu(need=7)
 torch.cuda.set_device(ava_gpu_index)
 #ids = [3, 7]
 
@@ -108,9 +108,9 @@ def test(net, epoch, dataLoader):
         if torch.cuda.is_available():
             image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
         out = net(image)
-
+        sig = torch.sigmoid(out)
         loss1 = loss_func1(out, mask)
-        loss2 = loss_func2(out, mask)
+        loss2 = loss_func2(sig, mask)
         #loss2 = DiceLoss()(out, mask)
         mask_loss = loss1 + loss2
         #mask_loss = MySoftmaxCrossEntropyLoss(nbclasses=8)(out, mask.long())
