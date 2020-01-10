@@ -65,7 +65,7 @@ def get_train_loader(batch_size=2):
 def get_test_loader(batch_size=2):
     return DataLoader(LanDataSet("data_list/test.csv"),
                       shuffle=True,
-                      batch_size=batch_size=)
+                      batch_size=batch_size)
 
 
 def get_valid_loader(batch_size=2):
