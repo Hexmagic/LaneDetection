@@ -143,6 +143,22 @@ def adjust_lr(optimizer, epoch):
         param_group['lr'] = lr
 
 
+def adjust_lr2(optimizer, epoch):
+    if epoch == 0:
+        lr = 5e-4
+    elif epoch == 1:
+        lr = 4e-4
+    elif epoch == 5:
+        lr = 3e-4
+    elif epoch == 10:
+        lr = 2e-4
+    elif epoch == 15:
+        lr = 7e-5
+    else:
+        return
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+
 from torch.nn import DataParallel
 
 
@@ -162,6 +178,7 @@ def main():
     if not load:
         optimizer = torch.optim.AdamW(net.parameters())
     else:
+        adjust_lr = adjust_lr2
         optimizer = torch.optim.ASGD(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
