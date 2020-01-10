@@ -22,7 +22,7 @@ from util.metric import compute_iou
 
 plt = sys.platform
 
-ava_gpu_index = wait_gpu(need=6)
+ava_gpu_index = wait_gpu(need=7)
 torch.cuda.set_device(ava_gpu_index)
 #ids = [3, 7]
 
