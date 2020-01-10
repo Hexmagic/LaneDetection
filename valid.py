@@ -32,7 +32,7 @@ def validLoss():
 	with torch.no_grad():
 		#loss_fuc = BCELoss().cuda()
 		loss_func1 = BCEWithLogitsLoss().cuda()
-    	loss_func2 = DiceLoss().cuda()
+		loss_func2 = DiceLoss().cuda()
 		model = torch.load('laneNet.pth').cuda()
 		test_loader = get_test_loader()
 		loss_list = []
