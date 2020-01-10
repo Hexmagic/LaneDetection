@@ -153,7 +153,7 @@ def main():
     if os.path.exists('laneNet.pth'):
         net = torch.load('laneNet.pth')
     else:
-        net = DeepLabV3P(n_class=8).cuda()
+        net = DeepLabV3P(n_classes==8).cuda()
     #net = DataParallel(net, device_ids=[3, 7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
