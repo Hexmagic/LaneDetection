@@ -1,12 +1,13 @@
 import torch
 from torch.autograd import Variable
-from torch.nn import BCELoss
+from torch.nn import BCELoss,BCEWithLogitsLoss
 from tqdm import tqdm
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import get_test_loader
 from util.label_util import label_to_color_mask
 import sys
+from util.loss import DiceLoss
 from model.unet import Unet
 from util.metric import compute_iou
 from collections import defaultdict
@@ -29,7 +30,9 @@ if plt == 'win32':
 
 def validLoss():
 	with torch.no_grad():
-		loss_fuc = BCELoss().cuda()
+		#loss_fuc = BCELoss().cuda()
+		loss_func1 = BCEWithLogitsLoss().cuda()
+    	loss_func2 = DiceLoss().cuda()
 		model = torch.load('laneNet.pth').cuda()
 		test_loader = get_test_loader()
 		loss_list = []
@@ -60,19 +63,17 @@ def validLoss():
 				vis.line(loss_list,
 						 win='loss',
 						 opts=dict(title='train iter loss'))
-			loss = loss_fuc(yout, yv)
+			loss1 = loss_func1(yout,yv)
+			loss2 = loss_func2(sig,yv)
+			loss = loss1+loss2
 			loss_list.append(loss.item())
-			for i in range(8):
-				print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
-				MIOU += result["TP"][i] / result["TA"][i]
-		result = compute_iou(sig, yv, result)
-		
-	print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
-	MIOU = 0.0
-	for i in range(8):
-		print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
-		MIOU += result["TP"][i] / result["TA"][i]
-	print(f"MIOU {MIOU}")
+			result = compute_iou(sig, yv, result)
+		print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
+		MIOU = 0.0
+		for i in range(8):
+			print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
+			MIOU += result["TP"][i] / result["TA"][i]
+		print(f"MIOU {MIOU}")
 
 
 validLoss()
