@@ -15,7 +15,7 @@ import numpy as np
 from visdom import Visdom
 plt = sys.platform
 
-
+torch.cuda.set_device(1)
 def encode(labels):
     rst = []
     for i, ele in enumerate(labels):
@@ -29,6 +29,7 @@ if plt == 'win32':
 
 
 def compute_miou(result):
+	MIOU = 0.0
     for i in range(8):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])
@@ -40,7 +41,7 @@ def compute_miou(result):
 
 def validLoss():
     with torch.no_grad():
-        net = torch.load('laneNet.pth')
+        net = torch.load('laneNet.pth',map_location={'cuda:0':'cuda:1'})
         net.eval()
         total_mask_loss = []
         dataLoader = get_test_loader(batch_size=1)
