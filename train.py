@@ -7,22 +7,25 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.nn import BCEWithLogitsLoss
+from torch.nn import BCEWithLogitsLoss, DataParallel
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
+from util.creat_csv import dump
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
-from util.loss import DiceLoss
+from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
+
+dump()
 
 plt = sys.platform
 
-ava_gpu_index = wait_gpu(need=7)
+ava_gpu_index = wait_gpu(need=5)
 torch.cuda.set_device(ava_gpu_index)
 #ids = [3, 7]
 
@@ -45,6 +48,8 @@ def train_epoch(net, epoch, dataLoader, optimizer):
     dataprocess = tqdm(dataLoader)
     loss_func1 = BCEWithLogitsLoss().cuda()
     loss_func2 = DiceLoss().cuda()
+    loss_func3 = FocalLoss().cuda()
+    #loss_func2 = FocalLoss(class_num=8).cuda()
     i = 0
     for batch_item in dataprocess:
         i += 1
@@ -53,16 +58,14 @@ def train_epoch(net, epoch, dataLoader, optimizer):
             image, mask = Variable(image).cuda(), Variable(mask).cuda()
         optimizer.zero_grad()
         out = net(image)
-        #print('1')
-        #one_hot_msk = one_hot(mask)
-        loss1 = loss_func1(out, mask)
         sig = torch.sigmoid(out)
+        loss1 = loss_func1(out, mask)  # bcewithlogitsloss
         loss2 = loss_func2(sig, mask)
-        loss2 = DiceLoss()(out, mask)
-        mask_loss = 0.7 * loss1 + 0.3 * loss2
+        loss3 = loss_func3(out, mask)
+        #loss2 = DiceLoss()(out, mask)
+        mask_loss = loss1 + loss2
         mask_loss.backward()
-        #loss1.backward()
-        #loss2.backward()
+
         if i % 10 == 0:
             if plt != 'win32':
                 continue
@@ -108,7 +111,7 @@ def test(net, epoch, dataLoader):
         loss1 = loss_func1(out, mask)
         loss2 = loss_func2(out, mask)
         #loss2 = DiceLoss()(out, mask)
-        mask_loss = 0.7 * loss1 + 0.3 * loss2
+        mask_loss = loss1 + loss2
         #mask_loss = MySoftmaxCrossEntropyLoss(nbclasses=8)(out, mask.long())
         total_mask_loss.append(mask_loss.detach().item())
         pred = torch.argmax(F.softmax(out, dim=1), dim=1)
@@ -128,28 +131,11 @@ def test(net, epoch, dataLoader):
 
 def adjust_lr(optimizer, epoch):
     if epoch == 0:
-        lr = 2e-3
+        lr = 6e-4
     elif epoch == 1:
-        lr = 7e-4
-    elif epoch == 5:
-        lr = 4e-4
-    elif epoch == 10:
-        lr = 2e-4
-    elif epoch == 15:
-        lr = 7e-5
-    else:
-        return
-    for param_group in optimizer.param_groups:
-        param_group['lr'] = lr
-
-
-def adjust_lr2(optimizer, epoch):
-    if epoch == 0:
         lr = 5e-4
-    elif epoch == 1:
-        lr = 4e-4
     elif epoch == 5:
-        lr = 3e-4
+        lr = 4e-4
     elif epoch == 10:
         lr = 2e-4
     elif epoch == 15:
@@ -158,33 +144,25 @@ def adjust_lr2(optimizer, epoch):
         return
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
-
-from torch.nn import DataParallel
 
 
 def main():
     train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
-    load = False
     if os.path.exists('laneNet.pth'):
-        load = True
-        print("Load Net From Local")
-        net = torch.load('laneNet.pth',map_location={'cuda:6':'cuda:2'}).cuda()
+        net = torch.load('laneNet.pth')
     else:
         net = DeeplabV3Plus(n_class=8).cuda()
     #net = DataParallel(net, device_ids=[3, 7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
-    if not load:
-        optimizer = torch.optim.AdamW(net.parameters())
-    else:
-        adjust_lr = adjust_lr2
-        optimizer = torch.optim.SparseAdam(net.parameters())
+    optimizer = torch.optim.AdamW(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, train_data_batch, optimizer)
-        miou = test(net, epoch, val_data_batch)
+        with torch.no_grad():
+            miou = test(net, epoch, val_data_batch)
         if miou > last_MIOU:
             print(f"miou {miou} > last_MIOU {last_MIOU},save model")
             torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))

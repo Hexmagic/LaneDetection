@@ -34,9 +34,9 @@ class LanDataSet(Dataset):
         super(LanDataSet, self).__init__(*args, **kwargs)
         self.transform = Compose([
             ToPILImage(),
-            ColorJitter(brightness=0.4, contrast=0.3),
+            ColorJitter(brightness=0.5, contrast=0.3),
             ToTensor(),
-            RandomErasing(scale=(0.02, 0.1), ratio=(0.3, 1)),
+            RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
         ])
         self.csv = pd.read_csv(root)
 

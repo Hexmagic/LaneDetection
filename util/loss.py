@@ -1,7 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 import torch.nn.functional as F
+from torch import nn as nn
+from torch.autograd import Variable
+from torch.nn import functional as F
 
 
 class MySoftmaxCrossEntropyLoss(nn.Module):
@@ -19,9 +22,6 @@ class MySoftmaxCrossEntropyLoss(nn.Module):
         return nn.CrossEntropyLoss(reduction="mean")(inputs, target)
 
 
-from torch import nn
-import torch
-from torch.nn import functional as F
 
 class DiceLoss(nn.Module):
 	def __init__(self):
@@ -57,6 +57,46 @@ def make_one_hot(input, num_classes):
     result = result.scatter_(1, input.cpu(), 1)
 
     return result
+
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.autograd import Variable
+
+
+def one_hot(index, classes):
+    size = index.size() + (classes,)
+    view = index.size() + (1,)
+
+    mask = torch.Tensor(*size).fill_(0)
+    index = index.view(*view)
+    ones = 1.
+
+    if isinstance(index, Variable):
+        ones = Variable(torch.Tensor(index.size()).fill_(1)).cuda()
+        mask = Variable(mask, volatile=index.volatile).cuda()
+
+    return mask.scatter_(1, index, ones)
+
+
+class FocalLoss(nn.Module):
+
+    def __init__(self, gamma=0, eps=1e-7):
+        super(FocalLoss, self).__init__()
+        self.gamma = gamma
+        self.eps = eps
+
+    def forward(self, input, target):
+        #y = one_hot(target, input.size(-1))
+        y = target
+        logit = F.softmax(input, dim=-1)
+        logit = logit.clamp(self.eps, 1. - self.eps)
+
+        loss = -1 * y * torch.log(logit) # cross entropy
+        loss = loss * (1 - logit) ** self.gamma # focal loss
+
+        return loss.sum()
 
 
 class BinaryDiceLoss(nn.Module):
@@ -96,4 +136,3 @@ class BinaryDiceLoss(nn.Module):
             return loss
         else:
             raise Exception('Unexpected reduction {}'.format(self.reduction))
-

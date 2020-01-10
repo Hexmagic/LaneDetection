@@ -11,8 +11,10 @@ CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 TEST_SIZE = 0.2
-DATA_ROOT = '/root/data/LaneSeg'
-PLAT =sys.platform
+PLAT = sys.platform
+DATA_ROOT = '/root/data/LaneSeg' if PLAT !='win32' else "D:\Compressed"
+
+
 
 class LaneDataFactory(object):
     '''
@@ -20,7 +22,6 @@ class LaneDataFactory(object):
     '''
     def __init__(self):
         self.root = DATA_ROOT
-        self.black = json.load(open('util/empty.json', 'r'))
 
     def saveCSV(self, name, imgs: List[str], labels: List[str]):
         dataFram = pd.DataFrame({'img': imgs, 'label': labels})
@@ -31,7 +32,9 @@ class LaneDataFactory(object):
         imgs: List[str] = []
         labels: List[str] = []
         # 获取图片和label
-        for road in ['Image_Data/Road02', 'Image_Data/Road04']:
+        for road in [
+                'Image_Data/Road02', 'Image_Data/Road04'
+        ]:
             img, label = self.getImageAndLabel(road)
             assert len(img) == len(label)
             logger.info(f"{road} find {len(img)} Image and Label")
@@ -53,32 +56,34 @@ class LaneDataFactory(object):
         '''获取对应Road下面的数据路径对饮的label路径'''
         img_list, label_list = [], []
         road = path.split('/')[-1]
-        pt = Path(os.path.join(self.root,path))
-        for ele in pt.glob('*/*/*.jpg'):
+        pt = Path(os.path.join(self.root, path))
+        if PLAT == 'win32':
+            glob = '*/*/*/*/*.jpg'
+        else:
+            glob = '*/*/*.jpg'
+        for ele in pt.glob(glob):
             imgName = ele.name
             labelParent = str(ele.parent).replace(
                 path, f'Gray_Label/Label_{road.lower()}/Label')
             labelName = imgName.replace('.jpg', '_bin.png')
-            if labelName in self.black:
-                logger.warning("Ignore Black Label")
-                continue
             labelPath = os.path.join(labelParent,
                                      imgName.replace(".jpg", "_bin.png"))
-            if PLAT =='win32':
-                path = labelPath.replace("Image_Data","Gray_Label")
-                path = path.replace(road,f'Label_{road.lower()}')
-                path = path.replace(f'ColorImage_{road.lower()}\\ColorImage','Label')
+            if PLAT == 'win32':
+                path = labelPath.replace("Image_Data", "Gray_Label")
+                path = path.replace(road, f'Label_{road.lower()}')
+                path = path.replace(f'ColorImage_{road.lower()}\\ColorImage',
+                                    'Label')
             else:
-                path=os.path.join(self.root, labelPath)
-                path=path.replace("Image_Data","Gray_Label")
-                path=path.replace(road,f'Label_{road.lower()}/Label')
+                path = os.path.join(self.root, labelPath)
+                path = path.replace("Image_Data", "Gray_Label")
+                path = path.replace(road, f'Label_{road.lower()}/Label')
             if not os.path.exists(path):
-                import pdb;pdb.set_trace()
+                import pdb
+                pdb.set_trace()
                 continue
             img_list.append(str(ele))
             label_list.append(path)
         return img_list, label_list
 
-
-if __name__ == "__main__":
+def dump():
     LaneDataFactory().dump()

@@ -40,11 +40,11 @@ def validLoss():
 			i += 1
 			xv, yv = Variable(x).cuda(), Variable(y).cuda()
 			yout = model(xv)
-			yout = torch.sigmoid(yout)
+			sig = torch.sigmoid(yout)
 			if i % 5 == 0:
 				if plt != 'win32':
 					continue
-				_np = yout.cpu().detach().numpy().copy()
+				_np = sig.cpu().detach().numpy().copy()
 				pred = np.array(encode(_np))
 				pred = pred.transpose((0, 3, 1, 2))
 				bag_msk_np = yv.cpu().detach().numpy().copy()
@@ -52,17 +52,21 @@ def validLoss():
 				label = np.array(encode(bag_msk_np))
 				bag_msk_np = label.transpose((0, 3, 1, 2))
 				vis.images(pred,
-						   win='train_pred',
+						   win='pred',
 						   opts=dict(title='train prediction'))
 				vis.images(bag_msk_np,
-						   win='train_label',
+						   win='label',
 						   opts=dict(title='train prediction'))
 				vis.line(loss_list,
-						 win='train_iter_loss',
+						 win='loss',
 						 opts=dict(title='train iter loss'))
 			loss = loss_fuc(yout, yv)
 			loss_list.append(loss.item())
-		result = compute_iou(yout, yv, result)
+			for i in range(8):
+				print(f"Class {i} IOU {result['TP'][i]/result['TA'][i]}")
+				MIOU += result["TP"][i] / result["TA"][i]
+		result = compute_iou(sig, yv, result)
+		
 	print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
 	MIOU = 0.0
 	for i in range(8):
