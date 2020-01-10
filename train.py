@@ -169,7 +169,7 @@ def main():
     if os.path.exists('laneNet.pth'):
         load = True
         print("Load Net From Local")
-        net = torch.load('laneNet.pth').cuda()
+        net = torch.load('laneNet.pth',map_location={'cuda:6':'cuda:2'}).cuda()
     else:
         net = DeeplabV3Plus(n_class=8).cuda()
     #net = DataParallel(net, device_ids=[3, 7])
@@ -179,7 +179,7 @@ def main():
         optimizer = torch.optim.AdamW(net.parameters())
     else:
         adjust_lr = adjust_lr2
-        optimizer = torch.optim.AdamW(net.parameters())
+        optimizer = torch.optim.SparseAdam(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
