@@ -28,6 +28,16 @@ if plt == 'win32':
     vis = Visdom()
 
 
+def compute_miou(result):
+    for i in range(8):
+        result_string = "{}: {:.4f} \n".format(
+            i, result["TP"][i] / result["TA"][i])
+        print(result_string)
+        MIOU += result["TP"][i] / result["TA"][i]
+    MIOU = MIOU / 8
+    return MIOU
+
+
 def validLoss():
     with torch.no_grad():
         net = torch.load('laneNet.pth')
@@ -44,6 +54,7 @@ def validLoss():
             "TA": {i: 0
                    for i in range(8)}
         }
+        i = 0
         for batch_item in dataprocess:
             image, mask = batch_item
             if torch.cuda.is_available():
@@ -59,16 +70,13 @@ def validLoss():
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
-            dataprocess.set_description_str("epoch:{}".format(epoch))
             dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
                 np.mean(total_mask_loss)))
-
-        for i in range(8):
-            result_string = "{}: {:.4f} \n".format(
-                i, result["TP"][i] / result["TA"][i])
-            print(result_string)
-            MIOU += result["TP"][i] / result["TA"][i]
-        return MIOU / 8
+            if i % 10 == 0:
+                miou = compute_miou(result)
+                dataprocess.set_description_str("MIOU:{}".format(miou))
+        miou = compute_miou(result)
+        print(f"Mean IOU {miou}")
 
 
 validLoss()
