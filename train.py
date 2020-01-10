@@ -91,9 +91,8 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         #mask_loss.backward()
         optimizer.step()
         dataprocess.set_description_str("epoch:{}".format(epoch))
-        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-            np.mean(total_mask_loss)))
-
+        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(mask_loss.item()))
+    print(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
 
 def test(net, epoch, dataLoader):
     net.eval()
