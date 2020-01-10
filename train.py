@@ -178,11 +178,11 @@ def main():
     if not load:
         optimizer = torch.optim.AdamW(net.parameters())
     else:
-        adjust_lr = adjust_lr2
-        optimizer = torch.optim.SGD(net.parameters())
+        #adjust_lr = adjust_lr2
+        optimizer = torch.optim.SGD(net.parameters(),momentum=0.8)
     last_MIOU = 0.0
     for epoch in range(40):
-        adjust_lr(optimizer, epoch)
+        #adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, train_data_batch, optimizer)
         miou = test(net, epoch, val_data_batch)
         if miou > last_MIOU:
