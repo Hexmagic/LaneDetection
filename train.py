@@ -149,7 +149,9 @@ from torch.nn import DataParallel
 def main():
     train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
+    load = False
     if os.path.exists('laneNet.pth'):
+        load = True
         print("Load Net From Local")
         net = torch.load('laneNet.pth').cuda()
     else:
@@ -157,7 +159,10 @@ def main():
     #net = DataParallel(net, device_ids=[3, 7])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
-    optimizer = torch.optim.AdamW(net.parameters())
+    if not load:
+        optimizer = torch.optim.AdamW(net.parameters())
+    else:
+        optimizer = torch.optim.ASGD(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
