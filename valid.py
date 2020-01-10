@@ -28,39 +28,40 @@ if plt == 'win32':
 
 
 def validLoss():
-    loss_fuc = BCELoss().cuda()
-    model = torch.load('laneNet.pth').cuda()
-    test_loader = get_test_loader()
-    loss_list = []
-    i = 0
-    result = {"TP": defaultdict(int), "TA": defaultdict(int)}
-    for batch in tqdm(test_loader):
-        x, y = batch
-        i += 1
-        xv, yv = Variable(x).cuda(), Variable(y).cuda()
-        yout = model(xv)
-        yout = torch.sigmoid(yout)
-        if i % 5 == 0:
-            if plt != 'win32':
-                continue
-            _np = yout.cpu().detach().numpy().copy()
-            pred = np.array(encode(_np))
-            pred = pred.transpose((0, 3, 1, 2))
-            bag_msk_np = yv.cpu().detach().numpy().copy()
-            #mask = np.argmax(bag_msk_np, axis=1)
-            label = np.array(encode(bag_msk_np))
-            bag_msk_np = label.transpose((0, 3, 1, 2))
-            vis.images(pred,
-                       win='train_pred',
-                       opts=dict(title='train prediction'))
-            vis.images(bag_msk_np,
-                       win='train_label',
-                       opts=dict(title='train prediction'))
-            vis.line(loss_list,
-                     win='train_iter_loss',
-                     opts=dict(title='train iter loss'))
-        loss = loss_fuc(yout, yv)
-        loss_list.append(loss.item())
+	with torch.no_grad():
+	    loss_fuc = BCELoss().cuda()
+	    model = torch.load('laneNet.pth').cuda()
+	    test_loader = get_test_loader()
+	    loss_list = []
+	    i = 0
+	    result = {"TP": defaultdict(int), "TA": defaultdict(int)}
+	    for batch in tqdm(test_loader):
+	        x, y = batch
+	        i += 1
+	        xv, yv = Variable(x).cuda(), Variable(y).cuda()
+	        yout = model(xv)
+	        yout = torch.sigmoid(yout)
+	        if i % 5 == 0:
+	            if plt != 'win32':
+	                continue
+	            _np = yout.cpu().detach().numpy().copy()
+	            pred = np.array(encode(_np))
+	            pred = pred.transpose((0, 3, 1, 2))
+	            bag_msk_np = yv.cpu().detach().numpy().copy()
+	            #mask = np.argmax(bag_msk_np, axis=1)
+	            label = np.array(encode(bag_msk_np))
+	            bag_msk_np = label.transpose((0, 3, 1, 2))
+	            vis.images(pred,
+	                       win='train_pred',
+	                       opts=dict(title='train prediction'))
+	            vis.images(bag_msk_np,
+	                       win='train_label',
+	                       opts=dict(title='train prediction'))
+	            vis.line(loss_list,
+	                     win='train_iter_loss',
+	                     opts=dict(title='train iter loss'))
+	        loss = loss_fuc(yout, yv)
+	        loss_list.append(loss.item())
         result = compute_iou(yout, yv, result)
     print(f'Valid Losss {sum(loss_list)/len(loss_list)}')
     MIOU = 0.0
