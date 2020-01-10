@@ -179,7 +179,7 @@ def main():
         optimizer = torch.optim.AdamW(net.parameters())
     else:
         adjust_lr = adjust_lr2
-        optimizer = torch.optim.ASGD(net.parameters())
+        optimizer = torch.optim.SGD(net.parameters())
     last_MIOU = 0.0
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
