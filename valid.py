@@ -33,7 +33,7 @@ def compute_miou(result):
 	for i in range(8):
 		result_string = "{}: {:.4f} \n".format(
 			i, result["TP"][i] / result["TA"][i])
-		print(result_string)
+		#print(result_string)
 		MIOU += result["TP"][i] / result["TA"][i]
 	MIOU = MIOU / 8
 	return MIOU
