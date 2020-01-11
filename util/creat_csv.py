@@ -46,10 +46,9 @@ class LaneDataFactory(object):
         i = int(length * TRAIN_SIZE)
         j = i + int(length * TEST_SIZE)
         # 返回训练集验证集和测试集
-        train_img, train_label, other_img, other_label = train_test_split(
-            imgs, labels, test_size=0.33)
-		import pdb; pdb.set_trace()
-        valid_img, valid_label, test_img, test_label = train_test_split(
+        train_img, other_img, train_label, other_label = train_test_split(
+            imgs, labels, test_size=0.3)
+        valid_img, test_img, valid_label, test_label = train_test_split(
             other_img, other_label, test_size=0.33)
         self.saveCSV('train.csv', train_img, train_label)
         self.saveCSV('test.csv', test_img, test_label)
@@ -91,4 +90,6 @@ class LaneDataFactory(object):
 
 def dump():
     LaneDataFactory().dump()
+
+
 dump()
