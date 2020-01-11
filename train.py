@@ -66,7 +66,8 @@ def train_epoch(net, epoch, dataLoader, optimizer, trainF):
         #loss2 = DiceLoss()(out, mask)
         mask_loss = loss1 + loss2
         mask_loss.backward()
-
+        if i % 100 == 0:
+            trainF.flush()
         if i % 10 == 0:
             if plt != 'win32':
                 continue
@@ -88,11 +89,11 @@ def train_epoch(net, epoch, dataLoader, optimizer, trainF):
                      win='train_iter_loss',
                      opts=dict(title='train iter loss'))
         total_mask_loss.append(mask_loss.item())
-        trainF.write(f'Epoch {epoch} loss {mask_loss.item()}')
+        trainF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
         #mask_loss.backward()
         optimizer.step()
         dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-             mask_loss.item()))
+            mask_loss.item()))
     trainF.write(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
     trainF.flush()
 
@@ -124,7 +125,7 @@ def test(net, epoch, dataLoader, testF):
         dataprocess.set_description_str("epoch:{}".format(epoch))
         dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
             np.mean(total_mask_loss)))
-        testF.write(f'Epoch {epoch} loss {mask_loss.item()}')
+        testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
     for i in range(1, 8):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])

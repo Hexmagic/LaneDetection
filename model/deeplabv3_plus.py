@@ -12,6 +12,8 @@ class SparableConv(Module):
                  dilation=1):
         super(SparableConv, self).__init__()
         layers = [
+            BatchNorm2d(in_channel),
+            RELU(),
             Conv2d(in_channel,
                    in_channel,
                    kernel_size=3,
