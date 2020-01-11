@@ -161,7 +161,7 @@ def main():
                          map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
         net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
-    model = DataParallel(net, device_ids=ids)
+    net = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
