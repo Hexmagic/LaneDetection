@@ -50,6 +50,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
     loss_func3 = FocalLoss().cuda(device=ids[0])
     #loss_func2 = FocalLoss(class_num=8).cuda()
     i = 0
+    dataprocess.set_description_str("epoch:{}".format(epoch))
     for batch_item in dataprocess:
         i += 1
         image, mask = batch_item
@@ -89,9 +90,8 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         total_mask_loss.append(mask_loss.item())
         #mask_loss.backward()
         optimizer.step()
-        dataprocess.set_description_str("epoch:{}".format(epoch))
-        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-            mask_loss.item()))
+        # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
+        #     mask_loss.item()))
     print(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
 
 
