@@ -14,6 +14,7 @@ def analyze(gen):
 	cnt = defaultdict(int)
 	for batch in tqdm(gen):
 		_, y = batch
+		y = y.cuda()
 		y = y[0]
 		for i in range(8):
 			ele = y[i]
