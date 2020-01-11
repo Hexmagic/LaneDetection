@@ -163,7 +163,3 @@ class DeeplabV3Plus(Module):
         return self.up2(feature_map)
 
 
-import torch
-data = torch.rand((1, 3, 512, 512))
-net = DeeplabV3Plus()
-print(net(data).shape)
