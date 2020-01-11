@@ -120,7 +120,7 @@ class Decoder(nn.Module):
 
         if separable:
             self.conv3x3 = nn.Sequential(
-                nn.Conv2d(304, 304, 3, padding=1, groups=304),
+                nn.Conv2d(304, 304, 3, padding=1, groups=304), nn.Dropout(0.3),
                 nn.Conv2d(304, 256, 1), nn.BatchNorm2d(256))
         else:
             self.conv3x3 = nn.Sequential(nn.Conv2d(304, 256, 3, padding=1),
@@ -160,7 +160,7 @@ class DeepLabV3P(nn.Module):
         self.encoder = Encoder(data_channels)
         self.decoder = Decoder(shortcut_channels)
 
-        self.last = nn.Conv2d(256, n_classes, 1)
+        self.last = Sequential(nn.Dropout(0.3), nn.Conv2d(256, n_classes, 1))
         self.up = nn.Upsample(mode='bilinear', scale_factor=4)
 
         # Initialize weights
@@ -177,7 +177,7 @@ class DeepLabV3P(nn.Module):
         data, shortcut = self.backbone(x)
         data = self.encoder(data)
         out = self.decoder(shortcut, data)
-        # out = self.last(out)
+        #out = self.last(out)
         # # out = self.up(out)
         # out = F.interpolate(out, size=x.shape[2:], mode="bilinear", align_corners=False)
         out = F.interpolate(out,
