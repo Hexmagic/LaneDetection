@@ -41,7 +41,7 @@ if plt == 'win32':
     vis = Visdom()
 
 
-def train_epoch(net, epoch, dataLoader, optimizer):
+def train_epoch(net, epoch, dataLoader, optimizer, trainF):
     net.train()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
@@ -88,6 +88,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
                      win='train_iter_loss',
                      opts=dict(title='train iter loss'))
         total_mask_loss.append(mask_loss.item())
+        trainF.write(f'Epoch {epoch} loss {mask_loss.item()}')
         #mask_loss.backward()
         optimizer.step()
         # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -95,7 +96,7 @@ def train_epoch(net, epoch, dataLoader, optimizer):
     print(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
 
 
-def test(net, epoch, dataLoader):
+def test(net, epoch, dataLoader, testF):
     net.eval()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
@@ -122,10 +123,11 @@ def test(net, epoch, dataLoader):
         dataprocess.set_description_str("epoch:{}".format(epoch))
         dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
             np.mean(total_mask_loss)))
-
+        testF.write(f'Epoch {epoch} loss {mask_loss.item()}')
     for i in range(1, 8):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])
+        testF.write(f'Epoch {epoch} IOU {result_string}')
         print(result_string)
         MIOU += result["TP"][i] / result["TA"][i]
     return MIOU / 7
@@ -152,19 +154,22 @@ def main():
     train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
     if os.path.exists('laneNet.pth'):
-        net = torch.load('laneNet.pth', map_location={'cuda:0': f'cuda:{ids[0]}'})
+        net = torch.load('laneNet.pth',
+                         map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
-        net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
+        net = DeeplabV3Plus(n_classes=8).cuda(device=ids[0])
     model = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
     last_MIOU = 0.0
+    trainF = open('train.txt', 'wa')
+    testF = open('train.txt', 'wa')
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
-        train_epoch(net, epoch, train_data_batch, optimizer)
+        train_epoch(net, epoch, train_data_batch, optimizer, trainF)
         with torch.no_grad():
-            miou = test(net, epoch, val_data_batch)
+            miou = test(net, epoch, val_data_batch, testF)
         if miou > last_MIOU:
             print(f"miou {miou} > last_MIOU {last_MIOU},save model")
             torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))

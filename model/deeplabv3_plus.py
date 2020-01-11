@@ -166,7 +166,7 @@ class DeeplabV3Plus(Module):
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
-        self.d1 = Dropout(0.3)
+        self.d1 = Dropout(0.4)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
                                      Dropout(0.4), SparableConv(256 + 48, 256),
