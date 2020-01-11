@@ -22,13 +22,11 @@ from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
 
-
-
 plt = sys.platform
 
-ava_gpu_index = wait_gpu(need=7)
-torch.cuda.set_device(ava_gpu_index)
-#ids = [3, 7]
+#ava_gpu_index = wait_gpu(need=7)
+#torch.cuda.set_device(ava_gpu_index)
+ids = [3, 0]
 
 
 def encode(labels):
@@ -47,16 +45,17 @@ def train_epoch(net, epoch, dataLoader, optimizer):
     net.train()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
-    loss_func1 = BCEWithLogitsLoss().cuda()
-    loss_func2 = DiceLoss().cuda()
-    loss_func3 = FocalLoss().cuda()
+    loss_func1 = BCEWithLogitsLoss().cuda(device=ids[0])
+    loss_func2 = DiceLoss().cuda(device=ids[0])
+    loss_func3 = FocalLoss().cuda(device=ids[0])
     #loss_func2 = FocalLoss(class_num=8).cuda()
     i = 0
     for batch_item in dataprocess:
         i += 1
         image, mask = batch_item
         if torch.cuda.is_available():
-            image, mask = Variable(image).cuda(), Variable(mask).cuda()
+            image, mask = Variable(image).cuda(
+                device=ids[0]), Variable(mask).cuda(device=ids[0])
         optimizer.zero_grad()
         out = net(image)
         sig = torch.sigmoid(out)
@@ -91,21 +90,24 @@ def train_epoch(net, epoch, dataLoader, optimizer):
         #mask_loss.backward()
         optimizer.step()
         dataprocess.set_description_str("epoch:{}".format(epoch))
-        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(mask_loss.item()))
+        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
+            mask_loss.item()))
     print(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
+
 
 def test(net, epoch, dataLoader):
     net.eval()
     total_mask_loss = []
     dataprocess = tqdm(dataLoader)
-    loss_func1 = BCEWithLogitsLoss().cuda()
-    loss_func2 = DiceLoss().cuda()
+    loss_func1 = BCEWithLogitsLoss().cuda(device=ids[0])
+    loss_func2 = DiceLoss().cuda(device=ids[0])
     MIOU = 0.0
     result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
     for batch_item in dataprocess:
         image, mask = batch_item
         if torch.cuda.is_available():
-            image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
+            image, mask = Variable(image).cuda(
+                device=ids[0]), Variable(mask).cuda(device=ids[0])
         out = net(image)
         sig = torch.sigmoid(out)
         loss1 = loss_func1(out, mask)
@@ -121,7 +123,7 @@ def test(net, epoch, dataLoader):
         dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
             np.mean(total_mask_loss)))
 
-    for i in range(1,8):
+    for i in range(1, 8):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])
         print(result_string)
@@ -150,10 +152,10 @@ def main():
     train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
     if os.path.exists('laneNet.pth'):
-        net = torch.load('laneNet.pth',map_location={'cuda:0':'cuda:3'})
+        net = torch.load('laneNet.pth', map_location={'cuda:0': 'cuda:3'})
     else:
-        net = DeepLabV3P(n_classes=8).cuda()
-    #net = DataParallel(net, device_ids=[3, 7])
+        net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
+    net = DataParallel(net, device_ids=[3, 0])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
