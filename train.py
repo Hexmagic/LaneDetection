@@ -91,8 +91,8 @@ def train_epoch(net, epoch, dataLoader, optimizer, trainF):
         trainF.write(f'Epoch {epoch} loss {mask_loss.item()}')
         #mask_loss.backward()
         optimizer.step()
-        # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-        #     mask_loss.item()))
+        dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
+             mask_loss.item()))
     trainF.write(f"Epoch {epoch} loss {np.mean(total_mask_loss)}")
     trainF.flush()
 
@@ -166,7 +166,7 @@ def main():
     optimizer = torch.optim.AdamW(net.parameters())
     last_MIOU = 0.0
     trainF = open('train.txt', 'w+')
-    testF = open('train.txt', 'w+')
+    testF = open('test.txt', 'w+')
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, train_data_batch, optimizer, trainF)
