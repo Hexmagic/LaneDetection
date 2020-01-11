@@ -17,6 +17,7 @@ def analyze(gen):
 		y = y[0]
 		for i in range(8):
 			ele = y[i]
+			import pdb; pdb.set_trace()
 			cnt[i]+= ele.sum()
 			
 	print(cnt)
