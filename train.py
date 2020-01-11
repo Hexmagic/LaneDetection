@@ -169,7 +169,7 @@ def main():
     #net = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
-    optimizer = torch.optim.Adam(net.parameters())
+    optimizer = torch.optim.AdamW(net.parameters())
     last_MIOU = 0.0
     trainF = open('train.txt', 'w+')
     testF = open('test.txt', 'w+')
