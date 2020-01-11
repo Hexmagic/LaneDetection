@@ -28,6 +28,7 @@ if len(argv) > 2:
 else:
     ava_gpu_index = wait_gpu(need=7)
     ids = [ava_gpu_index]
+print(f"Device Ids {ids}")
 
 
 def encode(labels):
@@ -161,6 +162,7 @@ def main():
         net = torch.load('laneNet.pth',
                          map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
+        print("train from Intial")
         net = DeeplabV3Plus(n_class=8).cuda(device=ids[0])
     #net = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
