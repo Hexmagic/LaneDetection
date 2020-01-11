@@ -154,17 +154,17 @@ def adjust_lr(optimizer, epoch):
 
 
 def main():
-    train_data_batch = get_train_loader(batch_size=2)
+    train_data_batch = get_train_loader(batch_size=4)
     val_data_batch = get_valid_loader()
     if os.path.exists('laneNet.pth'):
         net = torch.load('laneNet.pth',
                          map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
-        net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
+        net = DeeplabV3Plus(n_class=8).cuda(device=ids[0])
     net = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
-    optimizer = torch.optim.AdamW(net.parameters())
+    optimizer = torch.optim.Adam(net.parameters())
     last_MIOU = 0.0
     trainF = open('train.txt', 'w+')
     testF = open('test.txt', 'w+')
