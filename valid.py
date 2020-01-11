@@ -72,9 +72,9 @@ def validLoss():
 			result = compute_iou(pred, mask, result)
 			dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
 				np.mean(total_mask_loss)))
-			# if i % 100 == 0:
-			# 	miou = compute_miou(result)
-			# 	dataprocess.set_description_str("MIOU:{}".format(miou))
+			if i % 100 == 0:
+				miou = compute_miou(result)
+				dataprocess.set_description_str("MIOU:{}".format(miou))
 		miou = compute_miou(result)
 		print(f"Mean IOU {miou}")
 
