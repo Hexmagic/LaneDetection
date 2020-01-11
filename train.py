@@ -159,14 +159,14 @@ def main():
         net = torch.load('laneNet.pth',
                          map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
-        net = DeeplabV3Plus(n_class=8).cuda(device=ids[0])
+        net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
     model = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
     last_MIOU = 0.0
-    trainF = open('train.txt', 'wa')
-    testF = open('train.txt', 'wa')
+    trainF = open('train.txt', 'w+')
+    testF = open('train.txt', 'w+')
     for epoch in range(40):
         adjust_lr(optimizer, epoch)
         train_epoch(net, epoch, train_data_batch, optimizer, trainF)
