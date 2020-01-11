@@ -90,3 +90,4 @@ class LaneDataFactory(object):
 
 def dump():
     LaneDataFactory().dump()
+dump()
