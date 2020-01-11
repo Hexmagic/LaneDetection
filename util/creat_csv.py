@@ -48,7 +48,7 @@ class LaneDataFactory(object):
         # 返回训练集验证集和测试集
         train_img, other_img, train_label, other_label = train_test_split(
             imgs, labels, test_size=0.3)
-        valid_img, test_img, valid_label, test_label = train_test_split(
+        test_img, valid_img, test_label, valid_label = train_test_split(
             other_img, other_label, test_size=0.33)
         self.saveCSV('train.csv', train_img, train_label)
         self.saveCSV('test.csv', test_img, test_label)
