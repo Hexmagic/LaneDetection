@@ -6,7 +6,7 @@ class SparableConv(Module):
     def __init__(self,
                  in_channel,
                  out_channel,
-                 relu=False,
+                 relu=True,
                  stride=1,
                  padding=1,
                  dilation=1):
@@ -35,26 +35,10 @@ class AligenResidualBlock(Module):
         super(AligenResidualBlock, self).__init__()
         net = [
             SparableConv(in_channel, out_channel),
-            BatchNorm2d(out_channel),
-            ReLU(True),
             SparableConv(out_channel, out_channel),
-            BatchNorm2d(out_channel),
-            ReLU(True),
-            SparableConv(out_channel, out_channel, stride=2, padding=1)
+            SparableConv(out_channel, out_channel, stride=stride, padding=1)
         ]
-        if stride == 1:
-            # middle flow 需要三个可分离卷积
-            net = [SparableConv(in_channel, out_channel), ReLU(True)]
-        if relu_first:
-            # 第一个residual block开始不需要relu
-            net = [ReLU(True)] + net
-
-        if stride == 1:
-            # middle flow 不需要maxpooling
-            net[-1] = SparableConv(out_channel, out_channel)
-            self.net = Sequential(*net)
-        else:
-            self.net = Sequential(*net)
+        self.net = Sequential(*net)
         self.downsample = None
         if stride != 1 or in_channel != out_channel:
             self.downsample = Conv2d(in_channel, out_channel, 1, stride=stride)
@@ -97,54 +81,41 @@ class Xception(Module):
             if aligen else Sequential(),
             SparableConv(1536, 2048, padding=dilation, dilation=dilation),
         )
-        self.avgpool = AdaptiveAvgPool2d(1)
-        self.classifer = Linear(2048, n_class)
-        self.layers = [
-            self.entry_0, self.entry_1, self.middle, self.exit, self.avgpool
-        ]
 
     def forward(self, x):
-        self.entry_0_out = self.entry_0(x)
-        entry_1_out = self.entry_1(self.entry_0_out)
+        entry_0_out = self.entry_0(x)
+        entry_1_out = self.entry_1(entry_0_out)
         middle_out = self.middle(entry_1_out)
-        self.exit_out = self.exit(middle_out)
+        exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
-        return self.exit_out
-
-
-class SepDilationConv(Module):
-    def __init__(self, in_channel, out_channel, dilation):
-        super(SepDilationConv, self).__init__()
-        self.net = Sequential(
-            SparableConv(in_channel,
-                         out_channel,
-                         3,
-                         padding=dilation,
-                         dilation=dilation), BatchNorm2d(out_channel),
-            ReLU(True))
-
-    def forward(self, x):
-        return self.net(x)
+        return entry_0_out, exit_out
 
 
 class SepAspPooling(Module):
     def __init__(self, in_channel, out_channel):
         super(SepAspPooling, self).__init__()
-        self.layers_1 = SepDilationConv(in_channel, out_channel, 1)
-        self.layers_6 = SepDilationConv(in_channel, out_channel, 6)
-        self.layers_12 = SepDilationConv(in_channel, out_channel, 12)
-        self.layers_18 = SepDilationConv(in_channel, out_channel, 18)
+        self.layers_1 = SparableConv(in_channel,
+                                     out_channel,
+                                     dilation=1,
+                                     padding=1)
+        self.layers_6 = SparableConv(in_channel,
+                                     out_channel,
+                                     dilation=6,
+                                     padding=6)
+        self.layers_12 = SparableConv(in_channel,
+                                      out_channel,
+                                      dilation=12,
+                                      padding=12)
+        self.layers_18 = SparableConv(in_channel,
+                                      out_channel,
+                                      dilation=18,
+                                      padding=18)
 
-        self.pooling_layers = Sequential(
-            AdaptiveAvgPool2d((1, 1)),
-            SparableConv(in_channel, out_channel),
-            # BatchNorm2d(out_channel),
-            ReLU(True))
+        self.pooling_layers = Sequential(AdaptiveAvgPool2d((1, 1)),
+                                         Conv2d(in_channel, out_channel, 1))
 
-        self.projection = Sequential(
-            Conv2d(256 * 5, out_channel, 1, bias=False),
-            BatchNorm2d(out_channel), ReLU(True))  # 映射回原来的深度
+        self.projection = Sequential(SparableConv(256 * 5, out_channel, 1))
 
     def forward(self, x):
         conv_rsts = [
@@ -167,10 +138,9 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.d1 = Dropout(0.4)
-        self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
-        self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
-                                     Dropout(0.4), SparableConv(256 + 48, 256),
-                                     BatchNorm2d(256), ReLU(True),
+        self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1),
+                                         BatchNorm2d(48), ReLU())
+        self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
                                      SparableConv(256, 256))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = Sequential(UpsamplingBilinear2d(scale_factor=4),
@@ -182,9 +152,7 @@ class DeeplabV3Plus(Module):
                 init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
-        self.backbone(x)
-        feature_map = self.backbone.exit_out
-        low_feature = self.backbone.entry_0_out
+        low_feature, feature_map = self.backbone(x)
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
         feature_map = self.up1(feature_map)
@@ -193,3 +161,9 @@ class DeeplabV3Plus(Module):
         feature_map = self.projection(feature_map)
         #feature_map = self.up2(feature_map)
         return self.up2(feature_map)
+
+
+import torch
+data = torch.rand((1, 3, 512, 512))
+net = DeeplabV3Plus()
+print(net(data).shape)
