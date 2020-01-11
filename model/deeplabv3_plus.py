@@ -12,7 +12,6 @@ class SparableConv(Module):
                  dilation=1):
         super(SparableConv, self).__init__()
         layers = [
-            ReLU(),
             Conv2d(in_channel,
                    in_channel,
                    kernel_size=3,
@@ -20,8 +19,7 @@ class SparableConv(Module):
                    groups=in_channel,
                    stride=stride,
                    dilation=dilation,
-                   bias=False),
-            BatchNorm2d(in_channel)
+                   bias=False)
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
@@ -33,28 +31,16 @@ class SparableConv(Module):
 
 
 class AligenResidualBlock(Module):
-    def __init__(self,
-                 in_channel,
-                 out_channel,
-                 stride=2,
-                 relu_first=True,
-                 dilation=1,
-                 padding=1):
+    def __init__(self, in_channel, out_channel, stride=2, relu_first=True):
         super(AligenResidualBlock, self).__init__()
         net = [
-            SparableConv(in_channel,
-                         out_channel,
-                         dilation=dilation,
-                         padding=padding),
-            SparableConv(out_channel,
-                         out_channel,
-                         dilation=dilation,
-                         padding=padding),
-            SparableConv(out_channel,
-                         out_channel,
-                         stride=2,
-                         dilation=dilation,
-                         padding=padding)
+            SparableConv(in_channel, out_channel),
+            BatchNorm2d(out_channel),
+            ReLU(True),
+            SparableConv(out_channel, out_channel),
+            BatchNorm2d(out_channel),
+            ReLU(True),
+            SparableConv(out_channel, out_channel, stride=2, padding=1)
         ]
         if stride == 1:
             # middle flow 需要三个可分离卷积
@@ -87,7 +73,7 @@ class Xception(Module):
         # input 299,299,3
         self.residual_cls = AligenResidualBlock
         self.entry_0 = Sequential(*[
-            Sequential(Conv2d(3, 32, 3, stride=2, padding=1),
+            Sequential(Conv2d(3, 32, 3, stride=2, padding=1), ReLU(True),
                        Conv2d(32, 64, 3, padding=1)),
             self.residual_cls(64, 128, stride=2, relu_first=False),
         ])
@@ -105,7 +91,7 @@ class Xception(Module):
 
         dilation = 2 if aligen else 1  # Deeplab 需要用到三层的conv和atros conv
         self.exit = Sequential(
-            self.residual_cls(728, 1024, stride=1, dilation=dilation, padding=dilation),
+            self.residual_cls(728, 1024, stride=1 if aligen else 2),
             SparableConv(1024, 1536, padding=dilation, dilation=dilation),
             SparableConv(1536, 1536, padding=dilation, dilation=dilation)
             if aligen else Sequential(),
@@ -152,7 +138,9 @@ class SepAspPooling(Module):
 
         self.pooling_layers = Sequential(
             AdaptiveAvgPool2d((1, 1)),
-            Conv2d(in_channel, out_channel, kernel_size=1))
+            SparableConv(in_channel, out_channel),
+            # BatchNorm2d(out_channel),
+            ReLU(True))
 
         self.projection = Sequential(
             Conv2d(256 * 5, out_channel, 1, bias=False),
@@ -177,10 +165,12 @@ class DeeplabV3Plus(Module):
         super(DeeplabV3Plus, self).__init__()
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
-        self.aspp = SepAspPooling(2048, 256)
+        self.aspp = SepAspPooling(512 * 4, 256)
         self.d1 = Dropout(0.4)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
-        self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
+        self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
+                                     Dropout(0.4), SparableConv(256 + 48, 256),
+                                     BatchNorm2d(256), ReLU(True),
                                      SparableConv(256, 256))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = Sequential(UpsamplingBilinear2d(scale_factor=4),
@@ -192,7 +182,8 @@ class DeeplabV3Plus(Module):
                 init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
-        feature_map = self.backbone(x)
+        self.backbone(x)
+        feature_map = self.backbone.exit_out
         low_feature = self.backbone.entry_0_out
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
@@ -202,5 +193,3 @@ class DeeplabV3Plus(Module):
         feature_map = self.projection(feature_map)
         #feature_map = self.up2(feature_map)
         return self.up2(feature_map)
-
-
