@@ -71,4 +71,4 @@ def get_test_loader(batch_size=2):
 def get_valid_loader(batch_size=2):
     return DataLoader(LanDataSet("data_list/valid.csv"),
                       shuffle=True,
-                      batch_size=2)
+                      batch_size=batch_size)
