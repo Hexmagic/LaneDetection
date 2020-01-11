@@ -30,12 +30,12 @@ if plt == 'win32':
 
 def compute_miou(result):
 	MIOU = 0.0
-	for i in range(8):
-		result_string = "{}: {:.4f} \n".format(
+	for i in range(1,8):
+		#result_string = "{}: {:.4f} \n".format(
 			i, result["TP"][i] / result["TA"][i])
 		#print(result_string)
 		MIOU += result["TP"][i] / result["TA"][i]
-	MIOU = MIOU / 8
+	MIOU = MIOU / 7
 	return MIOU
 
 
@@ -72,7 +72,7 @@ def validLoss():
 			result = compute_iou(pred, mask, result)
 			dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
 				np.mean(total_mask_loss)))
-			if i % 10 == 0:
+			if i % 100 == 0:
 				miou = compute_miou(result)
 				dataprocess.set_description_str("MIOU:{}".format(miou))
 		miou = compute_miou(result)

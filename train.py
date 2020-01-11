@@ -121,12 +121,12 @@ def test(net, epoch, dataLoader):
         dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
             np.mean(total_mask_loss)))
 
-    for i in range(8):
+    for i in range(1,8):
         result_string = "{}: {:.4f} \n".format(
             i, result["TP"][i] / result["TA"][i])
         print(result_string)
         MIOU += result["TP"][i] / result["TA"][i]
-    return MIOU / 8
+    return MIOU / 7
 
 
 def adjust_lr(optimizer, epoch):
