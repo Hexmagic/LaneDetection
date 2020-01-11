@@ -180,7 +180,7 @@ def main():
             print(f"miou {miou} > last_MIOU {last_MIOU},save model")
             torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
             last_MIOU = miou
-
+    torch.save(net, os.path.join(os.getcwd(), "fnlaneNet.pth"))
 
 if __name__ == "__main__":
     main()
