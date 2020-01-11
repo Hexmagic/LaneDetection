@@ -14,7 +14,6 @@ from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from model.deeplabv3p import DeepLabV3P
-from util.creat_csv import dump
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
