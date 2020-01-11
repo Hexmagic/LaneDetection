@@ -75,7 +75,7 @@ class Xception(Module):
         # input 299,299,3
         self.residual_cls = AligenResidualBlock
         self.entry_0 = Sequential(*[
-            Sequential(Conv2d(3, 32, 3, stride=2, padding=1), ReLU(True),
+            Sequential(Conv2d(3, 32, 3, stride=2, padding=1),
                        Conv2d(32, 64, 3, padding=1)),
             self.residual_cls(64, 128, stride=2, relu_first=False),
         ])
@@ -108,11 +108,11 @@ class Xception(Module):
     def forward(self, x):
         self.entry_0_out = self.entry_0(x)
         entry_1_out = self.entry_1(self.entry_0_out)
-        #middle_out = self.middle(entry_1_out)
+        middle_out = self.middle(entry_1_out)
         #self.exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
-        return entry_1_out
+        return middle_out
 
 
 class SepDilationConv(Module):
