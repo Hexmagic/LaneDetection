@@ -152,7 +152,7 @@ def main():
     train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
     if os.path.exists('laneNet.pth'):
-        net = torch.load('laneNet.pth', map_location={'cuda:0': 'cuda:3'})
+        net = torch.load('laneNet.pth', map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
         net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
     model = DataParallel(net, device_ids=ids)
