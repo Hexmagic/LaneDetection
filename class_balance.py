@@ -4,6 +4,7 @@ from tqdm import tqdm
 import sys
 
 batch = sys.argv[1]
+print(f"batch {batch}")
 a = get_train_loader(batch_size=batch)
 b = get_valid_loader(batch_size=batch)
 c = get_test_loader(batch_size=batch)
