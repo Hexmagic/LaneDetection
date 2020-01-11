@@ -24,10 +24,11 @@ def analyze(gen):
 
 
 def main():
-	print('train ')
-	analyze(a)
 	print("valid")
 	analyze(b)
 	print("test")
 	analyze(c)
+	print('train ')
+	analyze(a)
+	
 main()
