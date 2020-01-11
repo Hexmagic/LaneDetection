@@ -135,9 +135,9 @@ def adjust_lr(optimizer, epoch):
     if epoch == 0:
         lr = 6e-4
     elif epoch == 1:
-        lr = 5e-4
-    elif epoch == 5:
         lr = 4e-4
+    elif epoch == 5:
+        lr = 3e-4
     elif epoch == 10:
         lr = 2e-4
     elif epoch == 15:
