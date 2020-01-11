@@ -59,7 +59,7 @@ class LanDataSet(Dataset):
 def get_train_loader(batch_size=2):
     return DataLoader(LanDataSet("data_list/train.csv"),
                       shuffle=True,
-                      batch_size=batch_size)
+                      batch_size=batch_size,drop_last=True,pin_memory=True,num_workers=4)
 
 
 def get_test_loader(batch_size=2):
