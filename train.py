@@ -26,7 +26,7 @@ plt = sys.platform
 
 #ava_gpu_index = wait_gpu(need=7)
 #torch.cuda.set_device(ava_gpu_index)
-ids = [3, 0]
+ids = [3]
 
 
 def encode(labels):
@@ -155,7 +155,6 @@ def main():
         net = torch.load('laneNet.pth', map_location={'cuda:0': 'cuda:3'})
     else:
         net = DeepLabV3P(n_classes=8).cuda(device=ids[0])
-    net = DataParallel(net, device_ids=[3, 0])
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.AdamW(net.parameters())
