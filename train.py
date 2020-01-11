@@ -22,7 +22,7 @@ from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
 
-dump()
+
 
 plt = sys.platform
 
