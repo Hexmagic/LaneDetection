@@ -2,7 +2,7 @@ from util.datagener import get_test_loader, get_train_loader, get_valid_loader
 from collections import defaultdict
 from tqdm import tqdm
 import sys
-
+import torch
 batch = int(sys.argv[1])
 print(f"batch {batch}")
 a = get_train_loader(batch_size=batch)
@@ -17,8 +17,7 @@ def analyze(gen):
 		y = y[0]
 		for i in range(8):
 			ele = y[i]
-			import pdb; pdb.set_trace()
-			cnt[i]+= ele.sum()
+			cnt[i]+= torch.sum(ele).item()
 			
 	print(cnt)
 
