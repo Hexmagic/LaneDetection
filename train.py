@@ -24,9 +24,9 @@ from util.metric import compute_iou
 
 plt = sys.platform
 
-#ava_gpu_index = wait_gpu(need=7)
-#torch.cuda.set_device(ava_gpu_index)
-ids = [5,0,3,6]
+ava_gpu_index = wait_gpu(need=7)
+
+ids = [ava_gpu_index]
 
 
 def encode(labels):
@@ -154,14 +154,14 @@ def adjust_lr(optimizer, epoch):
 
 
 def main():
-    train_data_batch = get_train_loader(batch_size=4)
+    train_data_batch = get_train_loader(batch_size=2)
     val_data_batch = get_valid_loader()
     if os.path.exists('laneNet.pth'):
         net = torch.load('laneNet.pth',
                          map_location={'cuda:0': f'cuda:{ids[0]}'})
     else:
         net = DeeplabV3Plus(n_class=8).cuda(device=ids[0])
-    net = DataParallel(net, device_ids=ids)
+    #net = DataParallel(net, device_ids=ids)
     # optimizer = torch.optim.SGD(net.parameters(), lr=lane_config.BASE_LR,
     #                             momentum=0.9, weight_decay=lane_config.WEIGHT_DECAY)
     optimizer = torch.optim.Adam(net.parameters())
