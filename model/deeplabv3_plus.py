@@ -108,11 +108,11 @@ class Xception(Module):
     def forward(self, x):
         self.entry_0_out = self.entry_0(x)
         entry_1_out = self.entry_1(self.entry_0_out)
-        middle_out = self.middle(entry_1_out)
-        self.exit_out = self.exit(middle_out)
+        #middle_out = self.middle(entry_1_out)
+        #self.exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
-        return self.exit_out
+        return entry_1_out
 
 
 class SepDilationConv(Module):
@@ -140,9 +140,7 @@ class SepAspPooling(Module):
 
         self.pooling_layers = Sequential(
             AdaptiveAvgPool2d((1, 1)),
-            SparableConv(in_channel, out_channel),
-            # BatchNorm2d(out_channel),
-            ReLU(True))
+            Conv2d(in_channel, out_channel, kernel_size=1))
 
         self.projection = Sequential(
             Conv2d(256 * 5, out_channel, 1, bias=False),
@@ -167,12 +165,10 @@ class DeeplabV3Plus(Module):
         super(DeeplabV3Plus, self).__init__()
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
-        self.aspp = SepAspPooling(512 * 4, 256)
+        self.aspp = SepAspPooling(728, 256)
         self.d1 = Dropout(0.4)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
-        self.projection = Sequential(BatchNorm2d(256 + 48), ReLU(True),
-                                     Dropout(0.4), SparableConv(256 + 48, 256),
-                                     BatchNorm2d(256), ReLU(True),
+        self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
                                      SparableConv(256, 256))
         self.up1 = UpsamplingBilinear2d(scale_factor=4)
         self.up2 = Sequential(UpsamplingBilinear2d(scale_factor=4),
@@ -184,8 +180,7 @@ class DeeplabV3Plus(Module):
                 init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
-        self.backbone(x)
-        feature_map = self.backbone.exit_out
+        feature_map = self.backbone(x)
         low_feature = self.backbone.entry_0_out
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
@@ -195,3 +190,9 @@ class DeeplabV3Plus(Module):
         feature_map = self.projection(feature_map)
         #feature_map = self.up2(feature_map)
         return self.up2(feature_map)
+
+
+m = DeeplabV3Plus(8)
+data = torch.rand((1, 3, 512, 512))
+rst = m(data)
+print(rst.shape)
