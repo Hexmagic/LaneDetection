@@ -26,7 +26,7 @@ plt = sys.platform
 
 #ava_gpu_index = wait_gpu(need=7)
 #torch.cuda.set_device(ava_gpu_index)
-ids = [3]
+ids = [5,0,3,6]
 
 
 def encode(labels):
@@ -47,7 +47,7 @@ def train_epoch(net, epoch, dataLoader, optimizer, trainF):
     dataprocess = tqdm(dataLoader)
     loss_func1 = BCEWithLogitsLoss().cuda(device=ids[0])
     loss_func2 = DiceLoss().cuda(device=ids[0])
-    loss_func3 = FocalLoss().cuda(device=ids[0])
+    #loss_func3 = FocalLoss().cuda(device=ids[0])
     #loss_func2 = FocalLoss(class_num=8).cuda()
     i = 0
     dataprocess.set_description_str("epoch:{}".format(epoch))
@@ -62,7 +62,7 @@ def train_epoch(net, epoch, dataLoader, optimizer, trainF):
         sig = torch.sigmoid(out)
         loss1 = loss_func1(out, mask)  # bcewithlogitsloss
         loss2 = loss_func2(sig, mask)
-        loss3 = loss_func3(out, mask)
+        #loss3 = loss_func3(out, mask)
         #loss2 = DiceLoss()(out, mask)
         mask_loss = loss1 + loss2
         mask_loss.backward()
