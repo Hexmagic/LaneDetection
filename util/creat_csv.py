@@ -7,19 +7,19 @@ import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
 import json
+from sklearn.model_selection import train_test_split
 CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
 VALID_SIZE = 0.1
 TEST_SIZE = 0.2
 PLAT = sys.platform
-DATA_ROOT = '/root/data/LaneSeg' if PLAT !='win32' else "D:\Compressed"
-
+DATA_ROOT = '/root/data/LaneSeg' if PLAT != 'win32' else "D:\Compressed"
 
 
 class LaneDataFactory(object):
     '''
-    获取所有的图片和对应的label位置，并按照比例割训练集和验证集，测试集
-    '''
+	获取所有的图片和对应的label位置，并按照比例割训练集和验证集，测试集
+	'''
     def __init__(self):
         self.root = DATA_ROOT
 
@@ -32,9 +32,7 @@ class LaneDataFactory(object):
         imgs: List[str] = []
         labels: List[str] = []
         # 获取图片和label
-        for road in [
-                'Image_Data/Road02', 'Image_Data/Road04'
-        ]:
+        for road in ['Image_Data/Road02', 'Image_Data/Road04']:
             img, label = self.getImageAndLabel(road)
             assert len(img) == len(label)
             logger.info(f"{road} find {len(img)} Image and Label")
@@ -48,9 +46,13 @@ class LaneDataFactory(object):
         i = int(length * TRAIN_SIZE)
         j = i + int(length * TEST_SIZE)
         # 返回训练集验证集和测试集
-        self.saveCSV('train.csv', imgs[:i], labels[:i])
-        self.saveCSV('test.csv', imgs[i:j], labels[i:j])
-        self.saveCSV('valid.csv', imgs[j:], labels[j:])
+        train_img, train_label, other_img, other_label = train_test_split(
+            imgs, labels, test_size=0.33)
+        valid_img, valid_label, test_img, test_label = train_test_split(
+            other_img, other_label, test_size=0.33)
+        self.saveCSV('train.csv', train_img, train_label)
+        self.saveCSV('test.csv', test_img, test_label)
+        self.saveCSV('valid.csv', valid_img, valid_label)
 
     def getImageAndLabel(self, path: str) -> Tuple[List[str], List[str]]:
         '''获取对应Road下面的数据路径对饮的label路径'''
@@ -84,6 +86,7 @@ class LaneDataFactory(object):
             img_list.append(str(ele))
             label_list.append(path)
         return img_list, label_list
+
 
 def dump():
     LaneDataFactory().dump()
