@@ -12,7 +12,6 @@ class SparableConv(Module):
                  dilation=1):
         super(SparableConv, self).__init__()
         layers = [
-            BatchNorm2d(in_channel),
             ReLU(),
             Conv2d(in_channel,
                    in_channel,
@@ -21,7 +20,8 @@ class SparableConv(Module):
                    groups=in_channel,
                    stride=stride,
                    dilation=dilation,
-                   bias=False)
+                   bias=False),
+            BatchNorm2d(in_channel)
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
@@ -33,16 +33,28 @@ class SparableConv(Module):
 
 
 class AligenResidualBlock(Module):
-    def __init__(self, in_channel, out_channel, stride=2, relu_first=True):
+    def __init__(self,
+                 in_channel,
+                 out_channel,
+                 stride=2,
+                 relu_first=True,
+                 dilation=1,
+                 padding=1):
         super(AligenResidualBlock, self).__init__()
         net = [
-            SparableConv(in_channel, out_channel),
-            BatchNorm2d(out_channel),
-            ReLU(True),
-            SparableConv(out_channel, out_channel),
-            BatchNorm2d(out_channel),
-            ReLU(True),
-            SparableConv(out_channel, out_channel, stride=2, padding=1)
+            SparableConv(in_channel,
+                         out_channel,
+                         dilation=dilation,
+                         padding=padding),
+            SparableConv(out_channel,
+                         out_channel,
+                         dilation=dilation,
+                         padding=padding),
+            SparableConv(out_channel,
+                         out_channel,
+                         stride=2,
+                         dilation=dilation,
+                         padding=padding)
         ]
         if stride == 1:
             # middle flow 需要三个可分离卷积
@@ -93,7 +105,7 @@ class Xception(Module):
 
         dilation = 2 if aligen else 1  # Deeplab 需要用到三层的conv和atros conv
         self.exit = Sequential(
-            self.residual_cls(728, 1024, stride=1 if aligen else 2),
+            self.residual_cls(728, 1024, stride=1, dilation=dilation, padding=dilation),
             SparableConv(1024, 1536, padding=dilation, dilation=dilation),
             SparableConv(1536, 1536, padding=dilation, dilation=dilation)
             if aligen else Sequential(),
@@ -109,10 +121,10 @@ class Xception(Module):
         self.entry_0_out = self.entry_0(x)
         entry_1_out = self.entry_1(self.entry_0_out)
         middle_out = self.middle(entry_1_out)
-        #self.exit_out = self.exit(middle_out)
+        self.exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
-        return middle_out
+        return self.exit_out
 
 
 class SepDilationConv(Module):
@@ -165,7 +177,7 @@ class DeeplabV3Plus(Module):
         super(DeeplabV3Plus, self).__init__()
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
-        self.aspp = SepAspPooling(728, 256)
+        self.aspp = SepAspPooling(2048, 256)
         self.d1 = Dropout(0.4)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1))
         self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
@@ -192,7 +204,3 @@ class DeeplabV3Plus(Module):
         return self.up2(feature_map)
 
 
-m = DeeplabV3Plus(8)
-data = torch.rand((1, 3, 512, 512))
-rst = m(data)
-print(rst.shape)
