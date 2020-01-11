@@ -15,6 +15,7 @@ def analyze(gen):
 	for batch in tqdm(gen):
 		_, y = batch
 		y = y[0]
+		import pdb; pdb.set_trace()
 		for i in range(8):
 			ele = y[i]
 			s = sum(ele)
