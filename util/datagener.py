@@ -32,12 +32,7 @@ def crop_resize_data(image, label=None, image_size=[768, 256], offset=690):
 class LanDataSet(Dataset):
     def __init__(self, root: str = "", transform=None, *args, **kwargs):
         super(LanDataSet, self).__init__(*args, **kwargs)
-        self.transform = Compose([
-            ToPILImage(),
-            ColorJitter(brightness=0.5, contrast=0.3),
-            ToTensor(),
-            RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
-        ])
+        self.transform = transform or ToTensor()
         self.csv = pd.read_csv(root)
 
     def __len__(self):
@@ -57,9 +52,18 @@ class LanDataSet(Dataset):
 
 
 def get_train_loader(batch_size=2):
-    return DataLoader(LanDataSet("data_list/train.csv"),
+    transform = Compose([
+        ToPILImage(),
+        ColorJitter(brightness=0.5, contrast=0.3),
+        ToTensor(),
+        RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
+    ])
+    return DataLoader(LanDataSet("data_list/train.csv", transform=transform),
                       shuffle=True,
-                      batch_size=batch_size,drop_last=True,pin_memory=True,num_workers=4)
+                      batch_size=batch_size,
+                      drop_last=True,
+                      pin_memory=True,
+                      num_workers=4)
 
 
 def get_test_loader(batch_size=2):
