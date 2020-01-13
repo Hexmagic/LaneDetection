@@ -59,7 +59,7 @@ def validLoss():
         }
         i = 0
         for batch_item in dataprocess:
-            i + 1
+            i +=1
             image, mask = batch_item
             if torch.cuda.is_available():
                 image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
@@ -70,9 +70,9 @@ def validLoss():
             mask_loss = loss1 + loss2
             total_mask_loss.append(mask_loss.detach().item())
             if i % 10 == 0:
-                time.sleep(1)
                 if plt != 'win32':
                     continue
+				time.sleep(1)
                 _np = sig.cpu().detach().numpy().copy(
                 )  # output_np.shape (4, 2, 160, 160)
                 #output_np = np.argmax(_np, axis=1)
