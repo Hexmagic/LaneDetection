@@ -8,7 +8,6 @@ from util.datagener import get_test_loader
 from util.label_util import label_to_color_mask
 import sys
 from util.loss import DiceLoss
-from model.unet import Unet
 from util.metric import compute_iou
 from collections import defaultdict
 import numpy as np
@@ -68,12 +67,7 @@ def validLoss():
             loss1 = loss_func1(out, mask)
             loss2 = loss_func2(sig, mask)
             mask_loss = loss1 + loss2
-            total_mask_loss.append(mask_loss.detach().item())
-            pred = torch.argmax(F.softmax(out, dim=1), dim=1)
-            mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
-            result = compute_iou(pred, mask, result)
-            dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-                np.mean(total_mask_loss)))
+            
             if i % 20 == 0:
                 miou = compute_miou(result)
                 dataprocess.set_description_str("MIOU:{}".format(miou))
@@ -100,6 +94,12 @@ def validLoss():
                 vis.line(total_mask_loss,
                          win='train_iter_loss',
                          opts=dict(title='train iter loss'))
+            total_mask_loss.append(mask_loss.detach().item())
+            pred = torch.argmax(F.softmax(out, dim=1), dim=1)
+            mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
+            result = compute_iou(pred, mask, result)
+            dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
+                np.mean(total_mask_loss)))
         miou = compute_miou(result)
         print(f"Mean IOU {miou}")
 
