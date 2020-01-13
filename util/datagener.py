@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader, Dataset
 import torch
+import jpeg4py as jpeg
 from util.label_util import mask_to_label
 from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage, RandomGrayscale, RandomErasing
 
@@ -42,6 +43,7 @@ class LanDataSet(Dataset):
         row = self.csv.iloc[index]
         img, mask = row["img"], row["label"]
         img = cv2.imread(img)
+        #img = jpeg.JPEG(img).decode()
         mask = cv2.imread(mask, 0)
         img, mask = crop_resize_data(img, mask)
         if self.transform:
@@ -62,8 +64,7 @@ def get_train_loader(batch_size=2):
                       shuffle=True,
                       batch_size=batch_size,
                       drop_last=True,
-                      pin_memory=True,
-                      num_workers=4)
+                      num_workers=2)
 
 
 def get_test_loader(batch_size=2):

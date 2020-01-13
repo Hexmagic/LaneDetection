@@ -7,6 +7,7 @@ import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
 import json
+from config import RoadList
 from sklearn.model_selection import train_test_split
 CSV_PATH = 'data_list'
 TRAIN_SIZE = 0.7
@@ -32,7 +33,7 @@ class LaneDataFactory(object):
         imgs: List[str] = []
         labels: List[str] = []
         # 获取图片和label
-        for road in ['Image_Data/Road02', 'Image_Data/Road04']:
+        for road in RoadList:
             img, label = self.getImageAndLabel(road)
             assert len(img) == len(label)
             logger.info(f"{road} find {len(img)} Image and Label")
