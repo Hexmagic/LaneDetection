@@ -100,6 +100,7 @@ def validLoss():
 			dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
 				np.mean(total_mask_loss)))
 			if i % 20 == 0:
+				import pdb; pdb.set_trace()
 				miou = compute_miou(result)
 				dataprocess.set_description_str("MIOU:{}".format(miou))
 		miou = compute_miou(result)
