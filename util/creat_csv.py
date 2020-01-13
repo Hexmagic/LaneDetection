@@ -9,12 +9,7 @@ from logzero import logger
 import json
 from config import RoadList
 from sklearn.model_selection import train_test_split
-CSV_PATH = 'data_list'
-TRAIN_SIZE = 0.7
-VALID_SIZE = 0.1
-TEST_SIZE = 0.2
-PLAT = sys.platform
-DATA_ROOT = '/root/data/LaneSeg' if PLAT != 'win32' else "D:\Compressed"
+
 
 
 class LaneDataFactory(object):
@@ -22,7 +17,7 @@ class LaneDataFactory(object):
 	获取所有的图片和对应的label位置，并按照比例割训练集和验证集，测试集
 	'''
     def __init__(self):
-        self.root = DATA_ROOT
+        self.root = DATAROOT
 
     def saveCSV(self, name, imgs: List[str], labels: List[str]):
         dataFram = pd.DataFrame({'img': imgs, 'label': labels})

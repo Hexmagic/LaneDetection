@@ -19,15 +19,15 @@ from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
-from config import MEMORY, EPOCH
+from config import MEMORY, EPOCH, LOGPATH, MODELNAME
 
 
 class Trainer(object):
     def __init__(self):
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
-        self.trainF = open('train.txt', 'w+')
-        self.testF = open('test.txt', 'w+')
+        self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
+        self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
         self.bootstrap()
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
@@ -88,10 +88,12 @@ class Trainer(object):
 
         self.visdom.images(img, win='Image', opts=dict(title='colorimg'))
         self.visdom.images(pred, win='Pred', opts=dict(title='pred'))
-        self.visdom.images(ground_truth, win='GroudTruth', opts=dict(title='label'))
+        self.visdom.images(ground_truth,
+                           win='GroudTruth',
+                           opts=dict(title='label'))
         self.visdom.line(total_mask_loss,
-                 win='train_iter_loss',
-                 opts=dict(title='train iter loss'))
+                         win='train_iter_loss',
+                         opts=dict(title='train iter loss'))
 
     def train(self, net, epoch, dataLoader, optimizer):
         net.train()
@@ -144,7 +146,6 @@ class Trainer(object):
         net.eval()
         total_mask_loss = []
         dataprocess = tqdm(dataLoader)
-        MIOU = 0.0
         result = {
             "TP": {i: 0
                    for i in range(8)},
@@ -173,10 +174,9 @@ class Trainer(object):
         return self.mean_iou(result)
 
     def load_model(self):
-        if os.path.exists('laneNet.pth'):
+        if os.path.exists(MODELNAME):
             print("train from load model")
-            net = torch.load('laneNet.pth',
-                             map_location={'cuda:0': f'cuda:{self.ids[0]}'})
+            net = torch.load(MODELNAME)
         else:
             print("train from scratch")
             net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])

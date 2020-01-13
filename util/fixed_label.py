@@ -7,6 +7,9 @@ from concurrent.futures import ThreadPoolExecutor,ProcessPoolExecutor
 from seize.util.pipe import split_into_n
 import os
 # 3a+4b+5c
+'''
+彩色标签转黑白,暂时未用
+'''
 CMAP = {
     1410: 1,
     1360: 1,

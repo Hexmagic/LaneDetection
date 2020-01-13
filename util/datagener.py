@@ -1,11 +1,13 @@
 import cv2
 import numpy as np
 import pandas as pd
-from torch.utils.data import DataLoader, Dataset
 import torch
-import jpeg4py as jpeg
+from torch.utils.data import DataLoader, Dataset
+from torchvision.transforms import (ColorJitter, Compose, RandomErasing,
+                                    RandomGrayscale, ToPILImage, ToTensor)
+
+from config import CSV_PATH,DATAROOT
 from util.label_util import mask_to_label
-from torchvision.transforms import Compose, ToTensor, ColorJitter, ToPILImage, RandomGrayscale, RandomErasing
 
 
 def one_hot(img):
