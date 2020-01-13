@@ -1,4 +1,4 @@
-from util.label_util import COLORMAP,label_to_color_mask,label_to_mask
+from util.label_util import label_to_color_mask,label_to_mask
 from pathlib import Path
 import numpy as np
 import cv2
@@ -52,9 +52,7 @@ CMAP = {
 
 
 def img_to_label(img):
-    sh = img.shape
     img = img.astype(np.int32)
-    label = np.zeros(sh[:2], dtype=np.uint8)
     a, b, c = cv2.split(img)
     tmp = 3 * a + 4 * b + 5 * c
     for k, v in CMAP.items():

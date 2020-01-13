@@ -9,7 +9,7 @@ from logzero import logger
 import json
 from config import RoadList
 from sklearn.model_selection import train_test_split
-
+from config import DATAROOT,CSV_PATH
 
 
 class LaneDataFactory(object):
@@ -38,9 +38,6 @@ class LaneDataFactory(object):
         # 打乱顺序，每次开始训练获取的测试验证和训练集不同
         shuffle(imgs, labels)
         # 获取切分的索引
-        length = len(imgs)
-        i = int(length * TRAIN_SIZE)
-        j = i + int(length * TEST_SIZE)
         # 返回训练集验证集和测试集
         train_img, other_img, train_label, other_label = train_test_split(
             imgs, labels, test_size=0.3)
@@ -55,7 +52,7 @@ class LaneDataFactory(object):
         img_list, label_list = [], []
         road = path.split('/')[-1]
         pt = Path(os.path.join(self.root, path))
-        if PLAT == 'win32':
+        if sys.platform == 'win32':
             glob = '*/*/*/*/*.jpg'
         else:
             glob = '*/*/*.jpg'
@@ -63,10 +60,9 @@ class LaneDataFactory(object):
             imgName = ele.name
             labelParent = str(ele.parent).replace(
                 path, f'Gray_Label/Label_{road.lower()}/Label')
-            labelName = imgName.replace('.jpg', '_bin.png')
             labelPath = os.path.join(labelParent,
                                      imgName.replace(".jpg", "_bin.png"))
-            if PLAT == 'win32':
+            if sys.platform == 'win32':
                 path = labelPath.replace("Image_Data", "Gray_Label")
                 path = path.replace(road, f'Label_{road.lower()}')
                 path = path.replace(f'ColorImage_{road.lower()}\\ColorImage',

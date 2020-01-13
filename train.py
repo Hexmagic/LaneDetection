@@ -28,7 +28,7 @@ class Trainer(object):
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
         self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
         self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
-        self.bootstrap()
+        self.ids = self.bootstrap()
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
 
@@ -38,11 +38,12 @@ class Trainer(object):
         '''
         argv = sys.argv
         if len(argv) > 1:
-            self.ids = [int(argv[1])]
+            ids = [int(argv[1])]
         else:
             ava_gpu_index = wait_gpu(need=MEMORY)
-            self.ids = [ava_gpu_index]
+            ids = [ava_gpu_index]
         print(f"Use Device  {self.ids} Train")
+        return ids
 
     def adjust_lr(self, optimizer, epoch):
         '''
@@ -130,7 +131,7 @@ class Trainer(object):
         self.trainF.write(mean_loss)
         self.trainF.flush()
 
-    def mean_iou(self, result):
+    def mean_iou(self, epoch, result):
         '''
         计算miou,只计算1-7一共7个类别的iou
         '''
@@ -171,15 +172,20 @@ class Trainer(object):
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
-        return self.mean_iou(result)
+        return self.mean_iou(epoch, result)
 
     def load_model(self):
         if os.path.exists(MODELNAME):
             print("train from load model")
-            net = torch.load(MODELNAME)
+            last_gpu_id = int(open('last_gpu.id', 'r').read().strip())
+            net = torch.load(
+                MODELNAME,
+                map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
             print("train from scratch")
             net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
+            with open('last_gpu.id', 'w') as f:
+                f.write(str(self.ids[0]))
         return net
 
     def run(self):
