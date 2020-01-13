@@ -135,13 +135,14 @@ class Trainer(object):
         '''
         计算miou,只计算1-7一共7个类别的iou
         '''
+        miou = 0
         for i in range(1, 8):
             result_string = "{}: {:.4f} \n".format(
                 i, result["TP"][i] / result["TA"][i])
             self.testF.write(f'Epoch {epoch} IOU {result_string}')
             print(result_string)
-            MIOU += result["TP"][i] / result["TA"][i]
-        return MIOU / 7
+            miou += result["TP"][i] / result["TA"][i]
+        return miou / 7
 
     def valid(self, net, epoch, dataLoader):
         net.eval()
