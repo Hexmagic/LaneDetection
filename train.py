@@ -17,7 +17,7 @@ from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
-from util.loss import DiceLoss, FocalLoss
+from util.loss import DiceLoss
 from util.metric import compute_iou
 from config import MEMORY, EPOCH, LOGPATH, MODELNAME
 
