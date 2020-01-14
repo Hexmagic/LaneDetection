@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (ColorJitter, Compose, RandomErasing,
                                     RandomGrayscale, ToPILImage, ToTensor)
 
-from config import CSV_PATH,DATAROOT
+from config import CSV_PATH, DATAROOT, SIZE
 from util.label_util import mask_to_label
 
 
@@ -17,7 +17,7 @@ def one_hot(img):
     return zs
 
 
-def crop_resize_data(image, label=None, image_size=[768, 256], offset=690):
+def crop_resize_data(image, label=None, image_size=SIZE, offset=690):
     roi_image = image[offset:, :]
     if label is not None:
         roi_label = label[offset:, :]
