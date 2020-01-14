@@ -42,7 +42,7 @@ class Valider(object):
         else:
             ava_gpu_index = wait_gpu(need=MEMORY)
             ids = [ava_gpu_index]
-        print(f"Use Device  {self.ids} Train")
+        print(f"Use Device  {ids} Train")
         return ids
 
     def encode(self, labels):
