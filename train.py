@@ -19,7 +19,7 @@ from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
-from config import MEMORY, EPOCH, LOGPATH, MODELNAME
+from config import MEMORY, EPOCH, LOGPATH, MODELNAME,BATCHSIZE
 
 
 class Trainer(object):
@@ -190,8 +190,8 @@ class Trainer(object):
         return net
 
     def run(self):
-        train_data_batch = get_train_loader()
-        val_data_batch = get_valid_loader()
+        train_data_batch = get_train_loader(batch_size=BATCHSIZE)
+        val_data_batch = get_valid_loader(batch_size=BATCHSIZE)
         net = self.load_model()
         #net = DataParallel(net, device_ids=self.ids)
         optimizer = torch.optim.AdamW(net.parameters())

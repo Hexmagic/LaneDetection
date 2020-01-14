@@ -6,3 +6,5 @@ CSV_PATH = 'data_list'
 DATAROOT = '/root/data/LaneSeg' if sys.platform != 'win32' else "D:\Compressed"
 LOGPATH = 'log'
 MODELNAME = 'laneNet.pth'
+SIZE = [768, 256]#1024x384,1536x512
+BATCHSIZE =2
