@@ -43,7 +43,7 @@ class Valider(object):
         else:
             ava_gpu_index = wait_gpu(need=MEMORY)
             ids = [ava_gpu_index]
-        print(f"Use Device  {ids} Train")
+        print(f"Use Device  {ids} Valid")
         return ids
 
     def encode(self, labels):
@@ -82,6 +82,7 @@ class Valider(object):
             total_mask_loss = []
 
             for i, batch_item in enumerate(self.dataprocess):
+                i = i + 1
                 image, mask = batch_item
                 image, mask = Variable(image).cuda(
                     device=self.ids[0]), Variable(mask).cuda(
