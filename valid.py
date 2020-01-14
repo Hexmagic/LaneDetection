@@ -17,6 +17,7 @@ from visdom import Visdom
 from config import MODELNAME, MEMORY
 import os
 
+
 class Valider(object):
     def __init__(self):
         plt = sys.platform
@@ -65,16 +66,13 @@ class Valider(object):
 
     def load_model(self):
         if os.path.exists(MODELNAME):
-            print("train from load model")
+            print("load from load model")
             last_gpu_id = int(open('last_gpu.id', 'r').read().strip())
             net = torch.load(
                 MODELNAME,
                 map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
-            print("train from scratch")
-            net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
-            with open('last_gpu.id', 'w') as f:
-                f.write(str(self.ids[0]))
+            print("Model Not Exists")
         return net
 
     def run(self):
@@ -85,7 +83,9 @@ class Valider(object):
 
             for i, batch_item in enumerate(self.dataprocess):
                 image, mask = batch_item
-                image, mask = Variable(image).cuda(), Variable(mask, ).cuda()
+                image, mask = Variable(image).cuda(
+                    device=self.ids[0]), Variable(mask).cuda(
+                        device=self.ids[0])
                 out = net(image)
                 sig = torch.sigmoid(out)
                 mask_loss = self.loss_func1(out, mask) + self.loss_func2(
