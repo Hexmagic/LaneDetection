@@ -194,7 +194,7 @@ class Trainer(object):
         val_data_batch = get_valid_loader(batchsize, shape)
         net = self.load_model()
         net = DataParallel(net, device_ids=self.ids)
-        #patch_replication_callback(net)
+        patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
         last_MIOU = 0.0
 
