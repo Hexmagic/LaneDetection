@@ -144,8 +144,10 @@ class DeeplabV3Plus(Module):
                                          BatchNorm2d(48), ReLU())
         self.projection = Sequential(SparableConv(256 + 48, 256), Dropout(0.4),
                                      SparableConv(256, 256))
-        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
-                                    Conv2d(256, n_class, 1, bias=True))
+        self.classifer = Sequential(
+            SparableConv(256,128),
+            BatchNorm2d(128), ReLU(True),
+            Conv2d(128, n_class, 1, bias=True))
 
         # for n in self.modules():
         #     if isinstance(n, Conv2d):
