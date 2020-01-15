@@ -184,7 +184,7 @@ class Trainer(object):
                 map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
             print("train from scratch")
-            net = DeeplabV3Plus(n_class=8)
+            net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
             with open('last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
