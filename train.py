@@ -217,5 +217,4 @@ def main():
 
 
 if __name__ == '__main__':
-    trainer = Trainer()
-    trainer.run()
+    main()

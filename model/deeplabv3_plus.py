@@ -156,22 +156,15 @@ class DeeplabV3Plus(Module):
         low_feature = self.low_projection(low_feature)
         
         feature_map = self.d1(feature_map)
-        h, w = low_feature.size()[:2]
+        h, w = low_feature.size()[2:]
         feature_map = Upsample((h, w), mode='bilinear', align_corners=True)(feature_map)
         feature_map = torch.cat([low_feature, feature_map], dim=1)
         
 
         feature_map = self.projection(feature_map)
-        h, w = x.size()[:2]
+        h, w = x.size()[2:]
         feature_map = Upsample((h, w), mode='bilinear',
                                align_corners=True)(feature_map)
 
         return self.classifer(feature_map)
 
-
-if __name__ == "__main__":
-    import torch
-    data = torch.rand((1, 3, 846, 255))
-    net = DeeplabV3Plus()
-    rst = net(data)
-    pritn(rst.shape)
