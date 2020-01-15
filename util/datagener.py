@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (ColorJitter, Compose, RandomErasing,
                                     RandomGrayscale, ToPILImage, ToTensor)
 
-from config import CSV_PATH, DATAROOT, SIZE
+from config import CSV_PATH, DATAROOT
 from util.label_util import mask_to_label
 
 
@@ -17,7 +17,7 @@ def one_hot(img):
     return zs
 
 
-def crop_resize_data(image, label=None, image_size=SIZE, offset=690):
+def crop_resize_data(image, label=None, image_size=[], offset=690):
     roi_image = image[offset:, :]
     if label is not None:
         roi_label = label[offset:, :]
@@ -33,8 +33,14 @@ def crop_resize_data(image, label=None, image_size=SIZE, offset=690):
 
 
 class LanDataSet(Dataset):
-    def __init__(self, root: str = "", transform=None, *args, **kwargs):
+    def __init__(self,
+                 root: str = "",
+                 size=[],
+                 transform=None,
+                 *args,
+                 **kwargs):
         super(LanDataSet, self).__init__(*args, **kwargs)
+        self.size = size
         self.transform = transform or ToTensor()
         self.csv = pd.read_csv(root)
 
@@ -47,7 +53,7 @@ class LanDataSet(Dataset):
         img = cv2.imread(img)
         #img = jpeg.JPEG(img).decode()
         mask = cv2.imread(mask, 0)
-        img, mask = crop_resize_data(img, mask)
+        img, mask = crop_resize_data(img, mask, self.size)
         if self.transform:
             img = self.transform(img)
         label = mask_to_label(mask)
@@ -55,27 +61,29 @@ class LanDataSet(Dataset):
         return img, torch.from_numpy(label)
 
 
-def get_train_loader(batch_size=2):
+def get_train_loader(batch_size=2, size=[846, 255]):
     transform = Compose([
         ToPILImage(),
         ColorJitter(brightness=0.5, contrast=0.3),
         ToTensor(),
         RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
     ])
-    return DataLoader(LanDataSet("data_list/train.csv", transform=transform),
+    return DataLoader(LanDataSet("data_list/train.csv",
+                                 transform=transform,
+                                 size=size),
                       shuffle=True,
                       batch_size=batch_size,
                       drop_last=True,
                       num_workers=2)
 
 
-def get_test_loader(batch_size=2):
-    return DataLoader(LanDataSet("data_list/test.csv"),
+def get_test_loader(batch_size=2, size=[846, 255]):
+    return DataLoader(LanDataSet("data_list/test.csv", size=size),
                       shuffle=True,
                       batch_size=batch_size)
 
 
-def get_valid_loader(batch_size=2):
-    return DataLoader(LanDataSet("data_list/valid.csv"),
+def get_valid_loader(batch_size=2, size=[846, 255]):
+    return DataLoader(LanDataSet("data_list/valid.csv", size=size),
                       shuffle=True,
                       batch_size=batch_size)

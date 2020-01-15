@@ -19,20 +19,20 @@ from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
-from config import MEMORY, EPOCH, LOGPATH, MODELNAME,BATCHSIZE
+from config import MEMORY, EPOCH, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 
 
 class Trainer(object):
-    def __init__(self):
+    def __init__(self, memory=MEMORY):
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
         self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
         self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
-        self.ids = self.bootstrap()
+        self.ids = self.bootstrap(memory)
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
 
-    def bootstrap(self):
+    def bootstrap(self, memory):
         '''
         获取可用的GPU
         '''
@@ -40,7 +40,7 @@ class Trainer(object):
         if len(argv) > 1:
             ids = [int(argv[1])]
         else:
-            ava_gpu_index = wait_gpu(need=MEMORY)
+            ava_gpu_index = wait_gpu(need=memory)
             ids = [ava_gpu_index]
         print(f"Use Device  {ids} Train")
         return ids
@@ -189,9 +189,9 @@ class Trainer(object):
                 f.write(str(self.ids[0]))
         return net
 
-    def run(self):
-        train_data_batch = get_train_loader(batch_size=BATCHSIZE)
-        val_data_batch = get_valid_loader(batch_size=BATCHSIZE)
+    def run(self, batchsize, shape):
+        train_data_batch = get_train_loader(batchsize, shape)
+        val_data_batch = get_valid_loader(batchsize, shape)
         net = self.load_model()
         #net = DataParallel(net, device_ids=self.ids)
         optimizer = torch.optim.AdamW(net.parameters())
@@ -207,6 +207,13 @@ class Trainer(object):
                 torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
                 last_MIOU = miou
         torch.save(net, os.path.join(os.getcwd(), "finalNet.pth"))
+
+
+def main():
+    for ele in [SIZE1, SIZE2, SIZE3]:
+        shape, batch = ele
+        trainer = Trainer(memory=6 if batch == 2 else 9)
+        trainer.run(batch, shape)
 
 
 if __name__ == '__main__':

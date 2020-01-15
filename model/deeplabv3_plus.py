@@ -142,24 +142,36 @@ class DeeplabV3Plus(Module):
                                          BatchNorm2d(48), ReLU())
         self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
                                      SparableConv(256, 256))
-        self.up1 = UpsamplingBilinear2d(scale_factor=4)
-        self.up2 = Sequential(UpsamplingBilinear2d(scale_factor=4),
-                              BatchNorm2d(256), ReLU(True),
-                              Conv2d(256, n_class, 1, bias=True))
+        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
+                                    Conv2d(256, n_class, 1, bias=True))
 
         for n in self.modules():
             if isinstance(n, Conv2d):
                 init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
+
         low_feature, feature_map = self.backbone(x)
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
-        feature_map = self.up1(feature_map)
-        feature_map = torch.cat([low_feature, feature_map], dim=1)
+        
         feature_map = self.d1(feature_map)
+        h, w = low_feature.size()[:2]
+        feature_map = Upsample((h, w), mode='bilinear', align_corners=True)(feature_map)
+        feature_map = torch.cat([low_feature, feature_map], dim=1)
+        
+
         feature_map = self.projection(feature_map)
-        #feature_map = self.up2(feature_map)
-        return self.up2(feature_map)
+        h, w = x.size()[:2]
+        feature_map = Upsample((h, w), mode='bilinear',
+                               align_corners=True)(feature_map)
+
+        return self.classifer(feature_map)
 
 
+if __name__ == "__main__":
+    import torch
+    data = torch.rand((1, 3, 846, 255))
+    net = DeeplabV3Plus()
+    rst = net(data)
+    pritn(rst.shape)
