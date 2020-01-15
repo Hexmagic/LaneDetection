@@ -29,7 +29,7 @@ def wait_gpu(need=4, sleep=5):
                 print(f"Find GPU {i} Has Free Memory {free}G")
                 ids.insert(0, i)
             elif free > 2:
-                gpu = Gputil.getGPUs()[i]
+                gpu = GPUtil.getGPUs()[i]
                 if gpu.load < 0.85:
                     ids.append(i)
         if ids:
