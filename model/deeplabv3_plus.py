@@ -138,11 +138,13 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.d1 = Dropout(0.4)
+        self.d2 = Dropout(0.4)
         self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1),
                                          BatchNorm2d(48), ReLU())
-        self.projection = Sequential(Dropout(0.4), SparableConv(256 + 48, 256),
+        self.projection = Sequential(SparableConv(256 + 48, 256), Dropout(0.4),
                                      SparableConv(256, 256))
-        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
+        self.classifer = Sequential(SparableConv(256, 256), Dropout(0.4),
+                                    BatchNorm2d(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
 
         for n in self.modules():
@@ -154,17 +156,17 @@ class DeeplabV3Plus(Module):
         low_feature, feature_map = self.backbone(x)
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
-        
+
+        feature_map = self.d1(feature_map)
         feature_map = self.d1(feature_map)
         h, w = low_feature.size()[2:]
-        feature_map = Upsample((h, w), mode='bilinear', align_corners=True)(feature_map)
-        feature_map = torch.cat([low_feature, feature_map], dim=1)
-        
 
+        feature_map = UpsamplingBilinear2d((h, w))(feature_map)
+        feature_map = torch.cat([low_feature, feature_map], dim=1)
+
+        feature_map = self.d2(feature_map)
         feature_map = self.projection(feature_map)
         h, w = x.size()[2:]
-        feature_map = Upsample((h, w), mode='bilinear',
-                               align_corners=True)(feature_map)
+        feature_map = UpsamplingBilinear2d((h, w))(feature_map)
 
         return self.classifer(feature_map)
-
