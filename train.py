@@ -11,7 +11,7 @@ from torch.nn import BCEWithLogitsLoss, DataParallel
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
-from sync_batchnorm import patch_replication_callback
+from sync_batchnorm import patch_replication_callback,DataParallelWithCallback
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -193,7 +193,7 @@ class Trainer(object):
         train_data_batch = get_train_loader(batchsize, shape)
         val_data_batch = get_valid_loader(batchsize, shape)
         net = self.load_model()
-        net = DataParallel(net, device_ids=self.ids)
+        net = DataParallelWithCallback(net, device_ids=self.ids)
         patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
         last_MIOU = 0.0
