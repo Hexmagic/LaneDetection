@@ -26,11 +26,12 @@ def wait_gpu(need=4, sleep=5):
             free = info.free / G
             if free > need:
                 print(f"Find GPU {i} Has Free Memory {free}G")
+                ids.insert(0, i)
+            elif free > 2:
                 ids.append(i)
-                #return i
         if ids:
             ids.sort()
-            return ids[0]
+            return ids
         sys.stdout.write('\r')
         sys.stdout.flush()
         date = datetime.now().strftime('%m-%d %H:%M:%S')
@@ -40,3 +41,6 @@ def wait_gpu(need=4, sleep=5):
                         attrs=["blink"])
         sys.stdout.write(stext)
         time.sleep(sleep)
+
+
+wait_gpu(4)

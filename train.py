@@ -11,7 +11,7 @@ from torch.nn import BCEWithLogitsLoss, DataParallel
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
-
+from sync_batchnorm import patch_replication_callback
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -41,7 +41,7 @@ class Trainer(object):
             ids = [int(argv[1])]
         else:
             ava_gpu_index = wait_gpu(need=memory)
-            ids = [ava_gpu_index]
+            ids = ava_gpu_index
         print(f"Use Device  {ids} Train")
         return ids
 
@@ -184,7 +184,7 @@ class Trainer(object):
                 map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
             print("train from scratch")
-            net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
+            net = DeeplabV3Plus(n_class=8)
             with open('last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
@@ -193,7 +193,8 @@ class Trainer(object):
         train_data_batch = get_train_loader(batchsize, shape)
         val_data_batch = get_valid_loader(batchsize, shape)
         net = self.load_model()
-        #net = DataParallel(net, device_ids=self.ids)
+        net = DataParallel(net, device_ids=self.ids)
+        patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
         last_MIOU = 0.0
 
