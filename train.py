@@ -38,7 +38,7 @@ class Trainer(object):
         '''
         argv = sys.argv
         if len(argv) > 1:
-            ids = [int(argv[1])]
+            ids = list(map(int, argv[1].split(',')))
         else:
             ava_gpu_index = wait_gpu(need=memory)
             ids = ava_gpu_index
