@@ -74,13 +74,14 @@ def get_train_loader(batch_size=2, size=[846, 255]):
                       shuffle=True,
                       batch_size=batch_size,
                       drop_last=True,
-                      num_workers=2)
+                      num_workers=4)
 
 
 def get_test_loader(batch_size=2, size=[846, 255]):
     return DataLoader(LanDataSet("data_list/test.csv", size=size),
                       shuffle=True,
-                      batch_size=batch_size)
+                      batch_size=batch_size,
+                      num_wokers=2)
 
 
 def get_valid_loader(batch_size=2, size=[846, 255]):
