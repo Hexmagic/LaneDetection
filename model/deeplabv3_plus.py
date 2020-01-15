@@ -1,5 +1,6 @@
 import torch
 from torch.nn import *
+import torch.nn.functional as F
 
 
 class SparableConv(Module):
@@ -143,13 +144,12 @@ class DeeplabV3Plus(Module):
                                          BatchNorm2d(48), ReLU())
         self.projection = Sequential(SparableConv(256 + 48, 256), Dropout(0.4),
                                      SparableConv(256, 256))
-        self.classifer = Sequential(
-                                    BatchNorm2d(256), ReLU(True),
+        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
 
-        for n in self.modules():
-            if isinstance(n, Conv2d):
-                init.kaiming_normal_(n.weight.data, mode='fan_out')
+        # for n in self.modules():
+        #     if isinstance(n, Conv2d):
+        #         init.kaiming_normal_(n.weight.data, mode='fan_out')
 
     def forward(self, x):
 
@@ -161,12 +161,16 @@ class DeeplabV3Plus(Module):
         feature_map = self.d1(feature_map)
         h, w = low_feature.size()[2:]
 
-        feature_map = UpsamplingBilinear2d((h, w))(feature_map)
+        feature_map = F.interpolate(feature_map, (h, w),
+                                    mode='bilinear',
+                                    align_corners=True)
         feature_map = torch.cat([low_feature, feature_map], dim=1)
 
         feature_map = self.d2(feature_map)
         feature_map = self.projection(feature_map)
         h, w = x.size()[2:]
-        feature_map = UpsamplingBilinear2d((h, w))(feature_map)
+        feature_map = F.interpolate(feature_map, (h, w),
+                                    mode='bilinear',
+                                    align_corners=True)
 
         return self.classifer(feature_map)
