@@ -212,7 +212,7 @@ class Trainer(object):
 
 def main():
     for ele in [SIZE1, SIZE2, SIZE3]:
-        print(f"Train Size {SIZE}")
+        print(f"Train Size {ele}")
         shape, batch = ele
         trainer = Trainer(memory=6 if batch == 2 else 9)
         trainer.run(batch, shape)
