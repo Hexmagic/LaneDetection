@@ -195,8 +195,9 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            net = DataParallelWithCallback(net, device_ids=self.ids)
-            patch_replication_callback(net)
+            net = DataParallel(net,device_ids=self.ids)
+            #net = DataParallelWithCallback(net, device_ids=self.ids)
+            #patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
         last_MIOU = 0.0
 
