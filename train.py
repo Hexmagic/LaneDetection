@@ -11,7 +11,6 @@ from torch.nn import BCEWithLogitsLoss, DataParallel
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
-from sync_batchnorm import patch_replication_callback, DataParallelWithCallback
 from model.deeplabv3_plus import DeeplabV3Plus
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -19,7 +18,7 @@ from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
-from config import MEMORY, EPOCH, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
+from config import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 
 
 class Trainer(object):
@@ -189,18 +188,19 @@ class Trainer(object):
                 f.write(str(self.ids[0]))
         return net
 
-    def run(self, batchsize, shape):
+    def run(self, batchsize, shape, epochs):
         train_data_batch = get_train_loader(batchsize, shape)
         val_data_batch = get_valid_loader(batchsize, shape)
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            net = DataParallelWithCallback(net, device_ids=self.ids)
-            patch_replication_callback(net)
+            net = DataParallel(net,device_ids=self.ids)
+            #net = DataParallelWithCallback(net, device_ids=self.ids)
+            #patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
         last_MIOU = 0.0
 
-        for epoch in range(EPOCH):
+        for epoch in range(epochs):
             self.adjust_lr(optimizer, epoch)
             self.train(net, epoch, train_data_batch, optimizer)
             with torch.no_grad():
@@ -215,9 +215,9 @@ class Trainer(object):
 def main():
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
-        shape, batch = ele
+        shape, batch, epoch = ele
         trainer = Trainer(memory=6 if batch == 2 else 9)
-        trainer.run(batch, shape)
+        trainer.run(batch, shape, epoch)
 
 
 if __name__ == '__main__':

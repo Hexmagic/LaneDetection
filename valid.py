@@ -14,7 +14,7 @@ import numpy as np
 import time
 from util.gpu import wait_gpu
 from visdom import Visdom
-from config import MODELNAME, MEMORY
+from setting import MODELNAME, MEMORY,SIZE2
 import os
 
 
@@ -31,7 +31,7 @@ class Valider(object):
         self.ids = self.bootstrap()
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        self.dataprocess = tqdm(get_test_loader(batch_size=1))
+        self.dataprocess = tqdm(get_test_loader(batch_size=1,size=SIZE2[0]))
 
     def bootstrap(self):
         '''
@@ -42,7 +42,7 @@ class Valider(object):
             ids = [int(argv[1])]
         else:
             ava_gpu_index = wait_gpu(need=MEMORY)
-            ids = [ava_gpu_index]
+            ids = ava_gpu_index
         print(f"Use Device  {ids} Valid")
         return ids
 
