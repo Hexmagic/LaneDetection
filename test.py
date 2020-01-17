@@ -113,10 +113,10 @@ class Tester(object):
                         self.visual(image, sig, mask, total_mask_loss)
                 # 计算IOU
                 pred = sig.cpu().detach().numpy().copy()
-                pred = pred.transpose((0, 3, 1, 2))
+                pred = np.argmax(pred,axis=1)
                 for ele, name in zip(pred, names):
                     name = name.split('/')[-1]
-                    import pdb; pdb.set_trace()
+                    ele=label_to_color_mask(ele)
                     cv2.imwrite(os.path.join(PREDICT_PATH, name), ele)
                 pred = torch.argmax(F.softmax(out, dim=1), dim=1)
                 mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
