@@ -13,7 +13,7 @@ from tqdm import tqdm
 from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
-from setting import MEMORY, MODELNAME, PREDICT_PATH, SIZE2
+from setting import MEMORY, MODELNAME, PREDICT_PATH, SIZE3
 from util.datagener import get_test_loader, get_valid_loader
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
@@ -35,8 +35,8 @@ class Tester(object):
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
         self.dataprocess = tqdm(get_test_loader(
-            batch_size=1, size=SIZE2[0])) if mode == 'test' else tqdm(
-                get_valid_loader(batch_size=1, size=SIZE2[0]))
+            batch_size=1, size=SIZE3[0])) if mode == 'test' else tqdm(
+                get_valid_loader(batch_size=1, size=SIZE3[0]))
 
     def bootstrap(self):
         '''
