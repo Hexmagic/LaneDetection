@@ -78,3 +78,7 @@ class PTrain(object):
             MIOU += self.result["TP"][i] / self.result["TA"][i]
         MIOU = MIOU / 7
         return MIOU
+
+if __name__ =='__main__':
+    pt = PTrain()
+    pt.run()
