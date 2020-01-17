@@ -5,50 +5,36 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import (ColorJitter, Compose, RandomErasing,
                                     RandomGrayscale, ToPILImage, ToTensor)
-
 from setting import CSV_PATH, DATAROOT
 from util.label_util import mask_to_label
+import os
 
 
-def crop_resize_data(image, label=None, image_size=[], offset=690):
-    roi_image = image[offset:, :]
-    if label is not None:
-        roi_label = label[offset:, :]
-        train_image = cv2.resize(roi_image, (image_size[0], image_size[1]),
-                                 interpolation=cv2.INTER_LINEAR)
-        train_label = cv2.resize(roi_label, (image_size[0], image_size[1]),
-                                 interpolation=cv2.INTER_NEAREST)
-        return train_image, train_label
-    else:
-        train_image = cv2.resize(roi_image, (image_size[0], image_size[1]),
-                                 interpolation=cv2.INTER_LINEAR)
-        return train_image
-
-
-class LanDataSet(Dataset):
+class ProData(Dataset):
     def __init__(self,
                  root: str = "",
                  size=[],
                  transform=None,
                  *args,
                  **kwargs):
-        super(LanDataSet, self).__init__(*args, **kwargs)
+        super(ProData, self).__init__(*args, **kwargs)
         self.size = size
-        self.transform = transform or ToTensor()
-        self.csv = pd.read_csv(root)
+        self.transform = ToTensor()
+        self.csv = pd.read_csv(os.path.join(CSV_PATH, 'test.csv'))
 
     def __len__(self):
         return len(self.csv)
 
     def __getitem__(self, index):
         row = self.csv.iloc[index]
-        mask = row["label"]
-		name = mask.split('/')[-1]
-		img = cv2.imread(name,0)
-        img = cv2.imread(mask,0)
-        img, mask = crop_resize_data(img, mask, self.size)
-        if self.transform:
-            img = self.transform(img)
+        label = row['label']
+        imgName = label.split('/')[-1]
+        img = cv2.imread(imgName)
+        img = self.transform(img)
+        mask = cv2.imread(label, 0)
+        mask = mask[690:, :]
         label = mask_to_label(mask)
-        label = one_hot(label)
-        return img, torch.from_numpy(label), row['label']
+        return img, torch.from_numpy(label)
+
+
+train_loader = DataLoader(ProData, batch_size=1, shuffle=True, num_workers=2)

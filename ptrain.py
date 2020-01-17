@@ -1,4 +1,4 @@
-from setting import MODELNAME,SIZE2
+from setting import MODELNAME, SIZE2
 from model.project import Projection
 from torch.optim import AdamW
 from torch.nn import BCEWithLogitsLoss
@@ -7,11 +7,12 @@ from tqdm import tqdm
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 import torch
-import numpy as np 
-from util.datagener import get_test_loader
+import numpy as np
+from util.mask_data import train_loader
 from visdom import Visdom
 import os
 import sys
+from torch.autograd import Variable
 plt = sys.platform
 
 
@@ -28,7 +29,36 @@ class PTrain(object):
         self.ids = self.bootstrap()
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        self.dataprocess = tqdm(get_test_loader(batch_size=1,size=SIZE2[0]))
+        self.dataprocess = tqdm(train_loader)
+
+    def run(self):
+        model = Projection()
+        opt = AdamW(model.parameters())
+        total_loss = []
+        for epoch in range(10):
+            result = {
+                "TP": {i: 0
+                       for i in range(8)},
+                "TA": {i: 0
+                       for i in range(8)}
+            }
+            for batch in self.dataprocess:
+                img, mask = batch
+                import pdb; pdb.set_trace()
+                img, mask = Variable(img).cuda(
+                    device=self.ids[0]), Variable(mask).cuda(
+                        device=self.ids[0])
+                out = model(img)
+                sig = torch.sigmoid(out)
+                loss = self.loss_func2(sig, mask)
+                opt.zero_grad()
+                loss.backward()
+                self.result = compute_iou(sig, mask, self.result)
+                miou = self.miou()
+                total_loss.append(loss.item())
+                opt.step()
+                self.dataprocess.set_postfix_str(f"loss {np.mean(total_loss)}")
+                self.dataprocess.set_description_str(f"miou {miou}")
 
     def bootstrap(self):
         '''
@@ -43,16 +73,6 @@ class PTrain(object):
         print(f"Use Device  {ids} Valid")
         return ids
 
-    def encode(self, labels):
-        '''
-        转换label为彩色标签
-        '''
-        rst = []
-        for ele in labels:
-            ele = np.argmax(ele, axis=0)
-            rst.append(label_to_color_mask(ele))
-        return rst
-
     def miou(self):
         MIOU = 0.0
         for i in range(1, 8):
@@ -60,14 +80,3 @@ class PTrain(object):
             MIOU += self.result["TP"][i] / self.result["TA"][i]
         MIOU = MIOU / 7
         return MIOU
-
-    def load_model(self):
-        if os.path.exists(MODELNAME):
-            print("load from load model")
-            last_gpu_id = int(open('last_gpu.id', 'r').read().strip())
-            net = torch.load(
-                MODELNAME,
-                map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
-        else:
-            print("Model Not Exists")
-        return net

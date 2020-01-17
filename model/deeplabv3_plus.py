@@ -172,5 +172,6 @@ class DeeplabV3Plus(Module):
         feature_map = F.interpolate(feature_map, (h, w),
                                     mode='bilinear',
                                     align_corners=True)
+        
 
         return self.classifer(feature_map)
