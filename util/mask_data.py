@@ -13,12 +13,10 @@ import os
 class ProData(Dataset):
     def __init__(self,
                  root: str = "",
-                 size=[],
                  transform=None,
                  *args,
                  **kwargs):
         super(ProData, self).__init__(*args, **kwargs)
-        self.size = size
         self.transform = ToTensor()
         self.csv = pd.read_csv(os.path.join(CSV_PATH, 'test.csv'))
 
@@ -37,4 +35,4 @@ class ProData(Dataset):
         return img, torch.from_numpy(label)
 
 
-train_loader = DataLoader(ProData, batch_size=1, shuffle=True, num_workers=2)
+train_loader = DataLoader(ProData(), batch_size=1, shuffle=True, num_workers=2)
