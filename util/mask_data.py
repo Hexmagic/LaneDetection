@@ -10,13 +10,6 @@ from setting import CSV_PATH, DATAROOT
 from util.label_util import mask_to_label
 
 
-def one_hot(img):
-    zs = np.array([np.zeros_like(img) for i in range(8)], dtype=np.float32)
-    for i in range(8):
-        zs[i][img == i] = 1
-    return zs
-
-
 def crop_resize_data(image, label=None, image_size=[], offset=690):
     roi_image = image[offset:, :]
     if label is not None:
@@ -49,44 +42,13 @@ class LanDataSet(Dataset):
 
     def __getitem__(self, index):
         row = self.csv.iloc[index]
-        img, mask = row["img"], row["label"]
-        img = cv2.imread(img)
-        #img = jpeg.JPEG(img).decode()
-        mask = cv2.imread(mask, 0)
+        mask = row["label"]
+		name = mask.split('/')[-1]
+		img = cv2.imread(name,0)
+        img = cv2.imread(mask,0)
         img, mask = crop_resize_data(img, mask, self.size)
         if self.transform:
             img = self.transform(img)
         label = mask_to_label(mask)
         label = one_hot(label)
         return img, torch.from_numpy(label), row['label']
-
-
-def get_train_loader(batch_size=2, size=[846, 255]):
-    transform = Compose([
-        ToPILImage(),
-        ColorJitter(brightness=0.5, contrast=0.3),
-        ToTensor(),
-        RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
-    ])
-    return DataLoader(LanDataSet("data_list/train.csv",
-                                 transform=transform,
-                                 size=size),
-                      shuffle=True,
-                      batch_size=batch_size,
-                      drop_last=True,
-                      num_workers=batch_size,
-                      pin_memory=True)
-
-
-def get_test_loader(batch_size=2, size=[846, 255]):
-    return DataLoader(LanDataSet("data_list/test.csv", size=size),
-                      shuffle=True,
-                      batch_size=batch_size,
-                      num_wokers=batch_size,
-                      pin_memory=True)
-
-
-def get_valid_loader(batch_size=2, size=[846, 255]):
-    return DataLoader(LanDataSet("data_list/valid.csv", size=size),
-                      shuffle=True,
-                      batch_size=batch_size)

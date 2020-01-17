@@ -1,25 +1,28 @@
+import os
+import sys
+import time
+from collections import defaultdict
+
+import cv2
+import numpy as np
 import torch
+import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import BCELoss, BCEWithLogitsLoss
 from tqdm import tqdm
-import torch.nn.functional as F
+from visdom import Visdom
+
 from model.deeplabv3_plus import DeeplabV3Plus
-from util.datagener import get_test_loader
+from setting import MEMORY, MODELNAME, PREDICT_PATH, SIZE2
+from util.datagener import get_test_loader, get_valid_loader
+from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
-import sys
 from util.loss import DiceLoss
 from util.metric import compute_iou
-from collections import defaultdict
-import numpy as np
-import time
-from util.gpu import wait_gpu
-from visdom import Visdom
-from setting import MODELNAME, MEMORY,SIZE2
-import os
 
 
-class Valider(object):
-    def __init__(self):
+class Tester(object):
+    def __init__(self, mode='test'):
         plt = sys.platform
         self.visdom = None if plt == 'linux' else Visdom()
         self.result = {
@@ -31,7 +34,9 @@ class Valider(object):
         self.ids = self.bootstrap()
         self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        self.dataprocess = tqdm(get_test_loader(batch_size=1,size=SIZE2[0]))
+        self.dataprocess = tqdm(get_test_loader(
+            batch_size=1, size=SIZE2[0])) if mode == 'test' else tqdm(
+                get_valid_loader(batch_size=1, size=SIZE2[0]))
 
     def bootstrap(self):
         '''
@@ -83,7 +88,7 @@ class Valider(object):
 
             for i, batch_item in enumerate(self.dataprocess):
                 i = i + 1
-                image, mask = batch_item
+                image, mask, names = batch_item
                 image, mask = Variable(image).cuda(
                     device=self.ids[0]), Variable(mask).cuda(
                         device=self.ids[0])
@@ -107,7 +112,11 @@ class Valider(object):
                     if self.visdom:
                         self.visual(image, sig, mask, total_mask_loss)
                 # 计算IOU
-
+                pred = sig.cpu().detach().numpy().copy()
+                pred = pred.transpose((0, 3, 1, 2))
+                for ele, name in zip(pred, names):
+                    name = name.split('/')[-1]
+                    cv2.imwrite(os.path.join(PREDICT_PATH, name), ele)
                 pred = torch.argmax(F.softmax(out, dim=1), dim=1)
                 mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
                 self.result = compute_iou(pred, mask, self.result)
@@ -135,4 +144,5 @@ class Valider(object):
 
 
 if __name__ == "__main__":
-    Valider().run()
+    mode = sys.argv[1]
+    Tester(mode).run()

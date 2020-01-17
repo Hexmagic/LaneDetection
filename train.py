@@ -18,7 +18,7 @@ from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
-from config import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
+from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 
 
 class Trainer(object):
@@ -104,7 +104,7 @@ class Trainer(object):
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
                 self.trainF.flush()
-            image, mask = batch_item
+            image, mask, _ = batch_item
             if torch.cuda.is_available():
                 image, mask = Variable(image).cuda(
                     device=self.ids[0]), Variable(mask).cuda(
@@ -154,7 +154,7 @@ class Trainer(object):
                    for i in range(8)}
         }
         for batch_item in dataprocess:
-            image, mask = batch_item
+            image, mask, _ = batch_item
             if torch.cuda.is_available():
                 image, mask = Variable(image).cuda(
                     device=self.ids[0]), Variable(mask).cuda(
@@ -194,7 +194,7 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            net = DataParallel(net,device_ids=self.ids)
+            net = DataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
