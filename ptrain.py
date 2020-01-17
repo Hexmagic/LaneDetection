@@ -1,18 +1,22 @@
-from setting import MODELNAME, SIZE2
-from model.project import Projection
-from torch.optim import AdamW
-from torch.nn import BCEWithLogitsLoss
-from util.loss import DiceLoss
-from tqdm import tqdm
-from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask
-import torch
-import numpy as np
-from util.mask_data import train_loader
-from visdom import Visdom
 import os
 import sys
+
+import numpy as np
+import torch
 from torch.autograd import Variable
+from torch.nn import BCEWithLogitsLoss
+from torch.optim import AdamW
+from tqdm import tqdm
+from visdom import Visdom
+
+from model.project import Projection
+from setting import MODELNAME, SIZE2
+from util.gpu import wait_gpu
+from util.label_util import label_to_color_mask
+from util.loss import DiceLoss
+from util.mask_data import train_loader
+from util.metric import compute_iou
+
 plt = sys.platform
 
 
@@ -36,12 +40,6 @@ class PTrain(object):
         opt = AdamW(model.parameters())
         total_loss = []
         for epoch in range(10):
-            result = {
-                "TP": {i: 0
-                       for i in range(8)},
-                "TA": {i: 0
-                       for i in range(8)}
-            }
             for batch in self.dataprocess:
                 img, mask = batch
                 import pdb; pdb.set_trace()
