@@ -160,9 +160,6 @@ class DeeplabV3Plus(Module):
                                               nonlinearity='relu')
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, val=0.0)
-            elif isinstance(layer, SyncBatchNorm):
-                torch.nn.init.constant_(layer.weight, val=1.0)
-                torch.nn.init.constant_(layer.bias, val=0.0)
 
     def forward(self, x):
 
