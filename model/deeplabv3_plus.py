@@ -64,10 +64,8 @@ class Xception(Module):
         ])
 
         # 分开方便deeplabv3+ 取出low feature
-        self.entry_1 = Sequential(*[
-            self.residual_cls(128, 256, stride=2),
-            self.residual_cls(256, 728, stride=2),
-        ])
+        self.entry_1 = self.residual_cls(128, 256, stride=2)
+        self.entry_2 = self.residual_cls(256, 728, stride=2)
 
         self.middle = Sequential(*[
             self.residual_cls(728, 728, stride=1)
@@ -86,11 +84,12 @@ class Xception(Module):
     def forward(self, x):
         entry_0_out = self.entry_0(x)
         entry_1_out = self.entry_1(entry_0_out)
-        middle_out = self.middle(entry_1_out)
+        entry_2_out = self.entry_2(entry_1_out)
+        middle_out = self.middle(entry_2_out)
         exit_out = self.exit(middle_out)
         #avg_out = self.avgpool(self.exit_out)
         #flatten = torch.flatten(avg_out)
-        return entry_0_out, exit_out
+        return entry_0_out, entry_1_out, exit_out
 
 
 class SepAspPooling(Module):
@@ -138,13 +137,23 @@ class DeeplabV3Plus(Module):
         self.n_class = n_class
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
-        self.d1 = Dropout(0.4)
-        self.d2 = Dropout(0.4)
-        self.low_projection = Sequential(Conv2d(128, 48, kernel_size=1),
-                                         BatchNorm2d(48), ReLU())
-        self.projection = Sequential(SparableConv(256 + 48, 256), Dropout(0.4),
-                                     SparableConv(256, 256))
-        self.classifer = Sequential(BatchNorm2d(256),ReLU(True),
+        self.d1 = Dropout(0.2)
+        self.d2 = Dropout(0.2)
+        self.low_projection = Sequential(
+            BatchNorm2d(128),
+            ReLU(True),
+            Conv2d(128, 64, kernel_size=1),
+        )
+        self.mid_projection = Sequential(
+            BatchNorm2d(256),
+            ReLU(True),
+            Conv2d(256, 128, kernel_size=1),
+        )
+        self.projection = Sequential(SparableConv(256 + 128, 256),
+                                     Dropout(0.2), SparableConv(256, 256))
+        self.projection2 = Sequential(SparableConv(256 + 64, 256),
+                                      Dropout(0.2), SparableConv(256, 256))
+        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
 
         # for n in self.modules():
@@ -153,25 +162,29 @@ class DeeplabV3Plus(Module):
 
     def forward(self, x):
 
-        low_feature, feature_map = self.backbone(x)
+        low_feature, middle_feature, feature_map = self.backbone(x)
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
+        middle_feature = self.mid_projection(middle_feature)
 
         feature_map = self.d1(feature_map)
         feature_map = self.d1(feature_map)
-        h, w = low_feature.size()[2:]
+        h, w = middle_feature.size()[2:]
 
         feature_map = F.interpolate(feature_map, (h, w),
                                     mode='bilinear',
                                     align_corners=True)
-        feature_map = torch.cat([low_feature, feature_map], dim=1)
+        feature_map = torch.cat([middle_feature, feature_map], dim=1)
 
         feature_map = self.d2(feature_map)
         feature_map = self.projection(feature_map)
-        h, w = x.size()[2:]
+
+        h, w = low_feature.size()[2:]
         feature_map = F.interpolate(feature_map, (h, w),
                                     mode='bilinear',
                                     align_corners=True)
-        
+
+        feature_map = torch.cat([low_feature, feature_map], dim=1)
+        feature_map = self.projection2(feature_map)
 
         return self.classifer(feature_map)
