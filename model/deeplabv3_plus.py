@@ -67,10 +67,8 @@ class Xception(Module):
         self.entry_1 = self.residual_cls(128, 256, stride=2)
         self.entry_2 = self.residual_cls(256, 728, stride=2)
 
-        self.middle = Sequential(*[
-            self.residual_cls(728, 728, stride=1)
-            for _ in range(16 if aligen else 8)
-        ])
+        self.middle = Sequential(
+            *[self.residual_cls(728, 728, stride=1) for _ in range(8)])
 
         dilation = 2 if aligen else 1  # Deeplab 需要用到三层的conv和atros conv
         self.exit = Sequential(
@@ -186,12 +184,15 @@ class DeeplabV3Plus(Module):
         feature_map = torch.cat([low_feature, feature_map], dim=1)
         feature_map = self.projection2(feature_map)
 
-        h,w = x.size()[2:]
-        feature_map = F.interpolate(feature_map,[h,w],mode='bilinear',align_corners=True)
+        h, w = x.size()[2:]
+        feature_map = F.interpolate(feature_map, [h, w],
+                                    mode='bilinear',
+                                    align_corners=True)
         return self.classifer(feature_map)
 
+
 if __name__ == "__main__":
-    net= DeeplabV3Plus(8)
-    data = torch.rand((1,3,288,288))
+    net = DeeplabV3Plus(8)
+    data = torch.rand((1, 3, 288, 288))
     rtn = net(data)
     print(rtn.shape)
