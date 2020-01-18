@@ -51,8 +51,8 @@ class Trainer(object):
         根据epoch衰减学习率
         '''
         if epoch == 0:
-            lr = 1e-3
-        elif epoch == 1:
+            lr = 7e-4
+        elif epoch == 2:
             lr = 6e-4
         elif epoch == 5:
             lr = 4e-4
