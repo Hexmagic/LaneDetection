@@ -24,7 +24,7 @@ class SparableConv(Module):
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
-            layers += [BatchNorm2d(out_channel), ReLU(True)]
+            layers += [SyncBatchNorm(out_channel), ReLU(True)]
         self.net = Sequential(*layers)
 
     def forward(self, x):
@@ -136,12 +136,12 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(
-            BatchNorm2d(128),
+            SyncBatchNorm(128),
             ReLU(True),
             Conv2d(128, 64, kernel_size=1),
         )
         self.mid_projection = Sequential(
-            BatchNorm2d(256),
+            SyncBatchNorm(256),
             ReLU(True),
             Conv2d(256, 128, kernel_size=1),
         )
@@ -149,7 +149,7 @@ class DeeplabV3Plus(Module):
                                      Dropout(0.2), SparableConv(256, 256))
         self.projection2 = Sequential(SparableConv(256 + 64, 256),
                                       Dropout(0.2), SparableConv(256, 256))
-        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
+        self.classifer = Sequential(SyncBatchNorm(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
 
         # for n in self.modules():
