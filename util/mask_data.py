@@ -1,3 +1,4 @@
+
 import os
 
 import cv2
@@ -33,4 +34,4 @@ class ProData(Dataset):
         return img, torch.from_numpy(label)
 
 
-train_loader = DataLoader(ProData(), batch_size=1, shuffle=True, num_workers=2)
+train_loader = DataLoader(ProData(), batch_size=1, shuffle=True, num_workers=0)

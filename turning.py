@@ -197,7 +197,7 @@ class Trainer(object):
             net = DataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
-        optimizer = torch.optim.AdamW(net.parameters())
+        optimizer = torch.optim.SGD(net.parameters(),momentum=0.90,weight_decay=0.04,lr=0.0004)
         last_MIOU = 0.0
 
         for epoch in range(epochs):
@@ -213,7 +213,7 @@ class Trainer(object):
 
 
 def main():
-    for ele in [SIZE1,SIZE2,SIZE3]:
+    for ele in [SIZE3]:
         print(f"Train Size {ele}")
         shape, batch, epoch = ele
         trainer = Trainer(memory=6 if batch == 2 else 9)

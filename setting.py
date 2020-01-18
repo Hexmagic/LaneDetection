@@ -11,6 +11,6 @@ MODELNAME = 'laneNet.pth'
 PREDICT_PATH = 'predict'
 if not os.path.exists(PREDICT_PATH):
     os.mkdir(PREDICT_PATH)
-SIZE1 = [[846, 255], 2, 10]
+SIZE1 = [[846, 255], 2, 15]
 SIZE2 = [[1128, 340], 2, 5]
 SIZE3 = [[1692, 510], 1, 10]

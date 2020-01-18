@@ -16,7 +16,7 @@ from model.deeplabv3_plus import DeeplabV3Plus
 from setting import MEMORY, MODELNAME, PREDICT_PATH, SIZE3
 from util.datagener import get_test_loader, get_valid_loader
 from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask
+from util.label_util import label_to_color_mask,mask_to_label
 from util.loss import DiceLoss
 from util.metric import compute_iou
 
@@ -112,14 +112,12 @@ class Tester(object):
                     if self.visdom:
                         self.visual(image, sig, mask, total_mask_loss)
                 # 计算IOU
-                pred = sig.cpu().detach().numpy().copy()
-                pred = np.argmax(pred,axis=1)
-                for ele, name in zip(pred, names):
-                    name = name.split('/')[-1]
-                    ele=label_to_color_mask(ele)
-                    cv2.imwrite(os.path.join(PREDICT_PATH, name), ele)
-                pred = torch.argmax(F.softmax(out, dim=1), dim=1)
-                mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
+                pred = F.interpolate(sig,(510*2,1692*2),mode='bilinear',align_corners=True)
+                pred = torch.argmax(pred,dim=1)
+                img = cv2.imread(names[0],0)
+                img = img[690:,:]
+                mask= mask_to_label(img)
+                mask = torch.stack([torch.from_numpy(mask)])
                 self.result = compute_iou(pred, mask, self.result)
 
     def visual(self, img, sig, mask, total_mask_loss):
@@ -145,5 +143,4 @@ class Tester(object):
 
 
 if __name__ == "__main__":
-    mode = sys.argv[1]
-    Tester(mode).run()
+    Tester('test').run()

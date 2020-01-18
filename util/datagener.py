@@ -82,7 +82,7 @@ def get_test_loader(batch_size=2, size=[846, 255]):
     return DataLoader(LanDataSet("data_list/test.csv", size=size),
                       shuffle=True,
                       batch_size=batch_size,
-                      num_wokers=batch_size,
+                      num_workers=batch_size,
                       pin_memory=True)
 
 
