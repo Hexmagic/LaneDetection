@@ -219,7 +219,7 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--local_rank', type=int, default=0)
-    torch.cuda.set_device(args.local_rank)
+    torch.cuda.set_device(5)
     world_size = 4
     torch.distributed.init_process_group(
         'nccl',
