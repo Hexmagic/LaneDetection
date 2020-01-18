@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import BCEWithLogitsLoss, DataParallel
 from torch.nn.parallel import DistributedDataParallel
-
+import torch.distributed as dist
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
@@ -196,6 +196,9 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
+            dist.init_process_group(
+                backend="nccl", init_method="env://"
+            )
             net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
