@@ -198,7 +198,7 @@ class Trainer(object):
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
             # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)            
-            net = DataParallelWithCallback(net,device_ids=self.ids)
+            net = DataParallel(net,device_ids=self.ids)
             # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
