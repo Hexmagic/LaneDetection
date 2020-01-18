@@ -156,8 +156,11 @@ class Trainer(object):
             "TA": {i: 0
                    for i in range(8)}
         }
+        i = 0
         for batch_item in dataprocess:
-            break
+            i +=1
+            if i>10:
+                break
             image, mask, _ = batch_item
             if torch.cuda.is_available():
                 image, mask = Variable(image).cuda(
