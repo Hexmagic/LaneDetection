@@ -105,7 +105,6 @@ class Trainer(object):
         dataprocess.set_description_str("epoch:{}".format(epoch))
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
-                break
                 self.trainF.flush()
             image, mask, _ = batch_item
             if torch.cuda.is_available():
@@ -158,9 +157,6 @@ class Trainer(object):
         }
         i = 0
         for batch_item in dataprocess:
-            i +=1
-            if i>10:
-                break
             image, mask, _ = batch_item
             if torch.cuda.is_available():
                 image, mask = Variable(image).cuda(
