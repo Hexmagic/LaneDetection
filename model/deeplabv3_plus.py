@@ -1,6 +1,7 @@
 import torch
 from torch.nn import *
 import torch.nn.functional as F
+from sync_batchnorm import SynchronizedBatchNorm2d
 
 
 class SparableConv(Module):
@@ -24,7 +25,7 @@ class SparableConv(Module):
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
-            layers += [BatchNorm2d(out_channel), ReLU(True)]
+            layers += [SynchronizedBatchNorm2d(out_channel), ReLU(True)]
         self.net = Sequential(*layers)
 
     def forward(self, x):
@@ -109,7 +110,7 @@ class SepAspPooling(Module):
                                       out_channel,
                                       dilation=18,
                                       padding=18)
-    
+
         self.pooling_layers = Sequential(AdaptiveAvgPool2d((1, 1)),
                                          Conv2d(in_channel, out_channel, 1))
 
@@ -136,12 +137,12 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(
-            BatchNorm2d(128),
+            SynchronizedBatchNorm2d(128),
             ReLU(True),
             Conv2d(128, 64, kernel_size=1),
         )
         self.mid_projection = Sequential(
-            BatchNorm2d(256),
+            SynchronizedBatchNorm2d(256),
             ReLU(True),
             Conv2d(256, 128, kernel_size=1),
         )
@@ -149,19 +150,19 @@ class DeeplabV3Plus(Module):
                                      Dropout(0.2), SparableConv(256, 256))
         self.projection2 = Sequential(SparableConv(256 + 64, 256),
                                       Dropout(0.2), SparableConv(256, 256))
-        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
+        self.classifer = Sequential(SynchronizedBatchNorm2d(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
-        
+
         for layer in self.modules():
             if isinstance(layer, torch.nn.Conv2d):
-                torch.nn.init.kaiming_normal_(layer.weight, mode='fan_out',
+                torch.nn.init.kaiming_normal_(layer.weight,
+                                              mode='fan_out',
                                               nonlinearity='relu')
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, val=0.0)
-            elif isinstance(layer, torch.nn.BatchNorm2d):
+            elif isinstance(layer, SyncBatchNorm):
                 torch.nn.init.constant_(layer.weight, val=1.0)
                 torch.nn.init.constant_(layer.bias, val=0.0)
-        
 
     def forward(self, x):
 
