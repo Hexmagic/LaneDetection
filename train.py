@@ -51,15 +51,15 @@ class Trainer(object):
         根据epoch衰减学习率
         '''
         if epoch == 0:
-            lr = 7e-4
-        elif epoch == 2:
             lr = 6e-4
+        elif epoch == 2:
+            lr = 5e-4
         elif epoch == 5:
             lr = 4e-4
         elif epoch == 10:
             lr = 5e-4
         elif epoch == 15:
-            lr = 2e-4
+            lr = 3e-4
         else:
             return
         for param_group in optimizer.param_groups:
