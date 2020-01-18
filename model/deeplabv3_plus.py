@@ -24,7 +24,7 @@ class SparableConv(Module):
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
-            layers += [SyncBatchNorm(out_channel), ReLU(True)]
+            layers += [BatchNorm2d(out_channel), ReLU(True)]
         self.net = Sequential(*layers)
 
     def forward(self, x):
@@ -109,7 +109,7 @@ class SepAspPooling(Module):
                                       out_channel,
                                       dilation=18,
                                       padding=18)
-
+    
         self.pooling_layers = Sequential(AdaptiveAvgPool2d((1, 1)),
                                          Conv2d(in_channel, out_channel, 1))
 
@@ -136,12 +136,12 @@ class DeeplabV3Plus(Module):
         self.backbone = Xception(aligen=True)
         self.aspp = SepAspPooling(512 * 4, 256)
         self.low_projection = Sequential(
-            SyncBatchNorm(128),
+            BatchNorm2d(128),
             ReLU(True),
             Conv2d(128, 64, kernel_size=1),
         )
         self.mid_projection = Sequential(
-            SyncBatchNorm(256),
+            BatchNorm2d(256),
             ReLU(True),
             Conv2d(256, 128, kernel_size=1),
         )
@@ -149,7 +149,7 @@ class DeeplabV3Plus(Module):
                                      Dropout(0.2), SparableConv(256, 256))
         self.projection2 = Sequential(SparableConv(256 + 64, 256),
                                       Dropout(0.2), SparableConv(256, 256))
-        self.classifer = Sequential(SyncBatchNorm(256), ReLU(True),
+        self.classifer = Sequential(BatchNorm2d(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
         
         for layer in self.modules():
@@ -158,7 +158,7 @@ class DeeplabV3Plus(Module):
                                               nonlinearity='relu')
                 if layer.bias is not None:
                     torch.nn.init.constant_(layer.bias, val=0.0)
-            elif isinstance(layer, torch.nn.SyncBatchNorm):
+            elif isinstance(layer, torch.nn.BatchNorm2d):
                 torch.nn.init.constant_(layer.weight, val=1.0)
                 torch.nn.init.constant_(layer.bias, val=0.0)
         
