@@ -196,8 +196,9 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)            
-            net = DistributedDataParallel(net, device_ids=self.ids)
+            # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)            
+            net = DataParallel(net)
+            # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
         optimizer = torch.optim.AdamW(net.parameters())
@@ -217,16 +218,16 @@ class Trainer(object):
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--local_rank', type=int, default=0)
-    torch.cuda.set_device(5)
-    world_size = 4
-    torch.distributed.init_process_group(
-        'nccl',
-        init_method='env://',
-        world_size=world_size,
-        rank=0,
-    )
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--local_rank', type=int, default=0)
+    # torch.cuda.set_device(5)
+    # world_size = 4
+    # torch.distributed.init_process_group(
+    #     'nccl',
+    #     init_method='env://',
+    #     world_size=world_size,
+    #     rank=1,
+    # )
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
         shape, batch, epoch = ele

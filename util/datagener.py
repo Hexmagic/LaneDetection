@@ -74,18 +74,18 @@ def get_train_loader(batch_size=2, size=[846, 255]):
     dataset = LanDataSet("data_list/train.csv",
                                  transform=transform,
                                  size=size)
-    sampler = torch.utils.data.distributed.DistributedSampler(
-        LanDataSet,
-        num_replicas=4,
-        rank=5,
-    )
+    # sampler = torch.utils.data.distributed.DistributedSampler(
+    #     LanDataSet,
+    #     num_replicas=4,
+    #     rank=5,
+    # )
     return DataLoader(dataset,
                       shuffle=True,
                       batch_size=batch_size,
                       drop_last=True,
                       num_workers=4,
-                      pin_memory=True,
-                      sampler=sampler)
+                      pin_memory=True)
+                    #   sampler=sampler)
 
 
 def get_test_loader(batch_size=2, size=[846, 255]):
