@@ -74,7 +74,7 @@ def get_train_loader(batch_size=2, size=[846, 255]):
                       shuffle=True,
                       batch_size=batch_size,
                       drop_last=True,
-                      num_workers=batch_size,
+                      num_workers=4,
                       pin_memory=True)
 
 
