@@ -168,7 +168,6 @@ class DeeplabV3Plus(Module):
         middle_feature = self.mid_projection(middle_feature)
 
         feature_map = self.d1(feature_map)
-        feature_map = self.d1(feature_map)
         h, w = middle_feature.size()[2:]
 
         feature_map = F.interpolate(feature_map, (h, w),
@@ -187,4 +186,12 @@ class DeeplabV3Plus(Module):
         feature_map = torch.cat([low_feature, feature_map], dim=1)
         feature_map = self.projection2(feature_map)
 
+        h,w = x.size()[2:]
+        feature_map = F.interpolate(feature_map,[h,w],mode='bilinear',align_corners=True)
         return self.classifer(feature_map)
+
+if __name__ == "__main__":
+    net= DeeplabV3Plus(8)
+    data = torch.rand((1,3,288,288))
+    rtn = net(data)
+    print(rtn.shape)
