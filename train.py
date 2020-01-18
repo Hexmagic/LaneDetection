@@ -197,8 +197,10 @@ class Trainer(object):
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
             dist.init_process_group(
-                backend="nccl", init_method="env://"
-            )
+                backend='tcp',
+                init_method=
+                'tcp://[ff15:1e18:5d4c:4cf0:d02d:b659:53ba:b0a7]:23456',
+                world_size=4)
             net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
