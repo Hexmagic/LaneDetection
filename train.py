@@ -21,7 +21,7 @@ from util.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
 from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
-
+from sync_batchnorm import DataParallelWithCallback
 
 class Trainer(object):
     def __init__(self, memory=MEMORY):
@@ -197,7 +197,7 @@ class Trainer(object):
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
             # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)            
-            net = DataParallel(net)
+            net = DataParallel(net,device_ids=self.ids)
             # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
