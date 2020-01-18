@@ -151,10 +151,17 @@ class DeeplabV3Plus(Module):
                                       Dropout(0.2), SparableConv(256, 256))
         self.classifer = Sequential(SyncBatchNorm(256), ReLU(True),
                                     Conv2d(256, n_class, 1, bias=True))
-
-        # for n in self.modules():
-        #     if isinstance(n, Conv2d):
-        #         init.kaiming_normal_(n.weight.data, mode='fan_out')
+        
+        for layer in self.modules():
+            if isinstance(layer, torch.nn.Conv2d):
+                torch.nn.init.kaiming_normal_(layer.weight, mode='fan_out',
+                                              nonlinearity='relu')
+                if layer.bias is not None:
+                    torch.nn.init.constant_(layer.bias, val=0.0)
+            elif isinstance(layer, torch.nn.SyncBatchNorm):
+                torch.nn.init.constant_(layer.weight, val=1.0)
+                torch.nn.init.constant_(layer.bias, val=0.0)
+        
 
     def forward(self, x):
 
