@@ -19,9 +19,13 @@ class Decoder(Module):
         super(Decoder, self).__init__()
         self.layers = []
         self.projections = []
-        for _ in range(depth):
-            self.layers.append(self.make_layer(in_channel))
-            self.projections.append(ConvBlock(in_channel, in_channel // 2))
+        for i in range(depth):
+            layer = self.make_layer(in_channel)
+            setattr(self, f'dconv{i}', layer)
+            self.layers.append(layer)
+            pro = ConvBlock(in_channel, in_channel // 2)
+            setattr(self, 'dproj{i}', pro)
+            self.projections.append(pro)
             in_channel //= 2
 
     def make_layer(self, in_channel):
@@ -45,9 +49,13 @@ class Encoder(Module):
         super(Encoder, self).__init__()
         self.layers = []
         self.downs = []
-        for _ in range(4):
-            self.layers.append(self.make_layer(in_channel))
-            self.downs.append(MaxPool2d(kernel_size=3, padding=1, stride=2))
+        for i in range(4):
+            layer = self.make_layer(in_channel)
+            setattr(self, f'econv{i}', layer)
+            self.layers.append(layer)
+            down_layer = MaxPool2d(kernel_size=3, padding=1, stride=2)
+            setattr(self, f'epool{i}', down_layer)
+            self.downs.append(down_layer)
             if in_channel == 3:
                 in_channel = 64
             else:
@@ -83,4 +91,3 @@ class Unet(Module):
         x = self.mid(short[-1])
         x = self.decoder(x, short)
         return self.classifer(x)
-
