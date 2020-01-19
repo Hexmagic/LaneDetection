@@ -17,30 +17,55 @@ class ConvBlock(Module):
 class Decoder(Module):
     def __init__(self, in_channel=1024, depth=4):
         super(Decoder, self).__init__()
-        self.layers = []
-        self.projections = []
-        for i in range(depth):
-            layer = self.make_layer(in_channel)
-            setattr(self, f'dconv{i}', layer)
-            self.layers.append(layer)
-            pro = ConvBlock(in_channel, in_channel // 2)
-            setattr(self, 'dproj{i}', pro)
-            self.projections.append(pro)
-            in_channel //= 2
+        self.dconv1 = self.make_layer(in_channel)
+        self.proj1 = ConvBlock(in_channel, in_channel // 2)
+        in_channel //= 2
+        self.dconv2 = self.make_layer(in_channel)
+        self.proj2 = ConvBlock(in_channel, in_channel // 2)
+        in_channel //= 2
+        self.dconv3 = self.make_layer(in_channel)
+        self.proj3 = ConvBlock(in_channel, in_channel // 2)
+        in_channel //= 2
+        self.dconv4 = self.make_layer(in_channel)
+        self.proj4 = ConvBlock(in_channel, in_channel // 2)
 
     def make_layer(self, in_channel):
         return Sequential(ConvBlock(in_channel, in_channel // 2),
                           ConvBlock(in_channel // 2, in_channel // 2))
 
     def forward(self, x, shorts):
-        shorts.reverse()
-        for layer, short, projection in zip(self.layers, shorts,
-                                            self.projections):
-            h, w = short.size()[2:]
-            x = projection(x)
-            up = F.interpolate(x, (h, w), mode='bilinear', align_corners=True)
-            cat = torch.cat([short, up], dim=1)
-            x = layer(cat)
+        a, b, c, d = shorts
+        x = self.proj1(x)
+        up = F.interpolate(x,
+                           d.size()[2:],
+                           mode='bilinear',
+                           align_corners=True)
+        cat = torch.cat([d, up], dim=1)
+        x = self.dconv1(cat)
+
+        x = self.proj2(x)
+        up = F.interpolate(x,
+                           c.size()[2:],
+                           mode='bilinear',
+                           align_corners=True)
+        cat = torch.cat([c, up], dim=1)
+        x = self.dconv2(cat)
+
+        x = self.proj3(x)
+        up = F.interpolate(x,
+                           b.size()[2:],
+                           mode='bilinear',
+                           align_corners=True)
+        cat = torch.cat([b, up], dim=1)
+        x = self.dconv3(cat)
+
+        x = self.proj4(x)
+        up = F.interpolate(x,
+                           a.size()[2:],
+                           mode='bilinear',
+                           align_corners=True)
+        cat = torch.cat([a, up], dim=1)
+        x = self.dconv4(cat)
         return x
 
 
@@ -91,3 +116,9 @@ class Unet(Module):
         x = self.mid(short[-1])
         x = self.decoder(x, short)
         return self.classifer(x)
+
+
+if __name__ == "__main__":
+    data = torch.rand((1, 3, 245, 234))
+    net = Unet()
+    print(net(data).shape)
