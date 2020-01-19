@@ -5,24 +5,26 @@ import sys
 # os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 import numpy as np
 import torch
+import torch.distributed as dist
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import BCEWithLogitsLoss, DataParallel
 from torch.nn.parallel import DistributedDataParallel
-import torch.distributed as dist
 from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
+
 from model.deeplabv3_plus import DeeplabV3Plus
+from model.unet import Unet
 from model.unet_plus import Unet_2D
+from setting import LOGPATH, MEMORY, MODELNAME, SIZE1, SIZE2, SIZE3
+from sync_batchnorm import DataParallelWithCallback
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
-from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
-from sync_batchnorm import DataParallelWithCallback
 
 
 class Trainer(object):
@@ -182,7 +184,7 @@ class Trainer(object):
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
             dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-               np.mean(total_mask_loss)))
+                np.mean(total_mask_loss)))
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
@@ -201,9 +203,12 @@ class Trainer(object):
             if self.model == 'deeplab':
                 print("Model Deeplab")
                 net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
-            else:
+            elif model == 'unet++':
                 print("Model Unet++")
                 net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
+            else:
+                print("MOdeul Unet")
+                net = Unet(n_class=8).cuda(device=self.ids[0])
             with open(f'{self.model}_last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
@@ -249,7 +254,7 @@ def main():
     #     rank=1,
     # )
     model = sys.argv[2]
-    assert model in ['unet', 'deeplab']
+    assert model in ['unet', 'deeplab', 'unet++']
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
         shape, batch, epoch = ele
