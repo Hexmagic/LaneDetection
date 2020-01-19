@@ -19,7 +19,7 @@ from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
-from util.loss import DiceLoss
+from util.loss import DiceLoss,FocalLoss
 from util.metric import compute_iou
 from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 from sync_batchnorm import DataParallelWithCallback
@@ -58,15 +58,15 @@ class Trainer(object):
         elif epoch == 2:
             lr = 4e-4
         elif epoch == 5:
-            lr = 5e-4
-        elif epoch == 10:
-            lr = 4e-4
-        elif epoch == 15:
             lr = 3e-4
-        elif epoch == 20:
+        elif epoch == 8:
             lr = 4e-4
-        elif epoch == 25:
+        elif epoch == 13:
+            lr = 3e-4
+        elif epoch == 18:
             lr = 2e-4
+        elif epoch == 22:
+            lr = 3e-4
         else:
             return
         for param_group in optimizer.param_groups:
