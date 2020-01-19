@@ -203,7 +203,7 @@ class Trainer(object):
             if self.model == 'deeplab':
                 print("Model Deeplab")
                 net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
-            elif model == 'unet++':
+            elif self.model == 'unet++':
                 print("Model Unet++")
                 net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
             else:
