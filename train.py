@@ -164,8 +164,8 @@ class Trainer(object):
             "TA": {i: 0
                    for i in range(8)}
         }
-        #loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
-        #loss_func2 = DiceLoss().cuda(device=self.ids[0])
+        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
+        loss_func2 = DiceLoss().cuda(device=self.ids[0])
         #loss_func3 = FocalLoss().cuda(device=self.ids[0])
         for batch_item in dataprocess:
             image, mask, _ = batch_item
@@ -175,15 +175,15 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            #mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
-            #total_mask_loss.append(mask_loss.item())
+            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
+            total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
-            #dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-            #    np.mean(total_mask_loss)))
-            #self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
+            dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
+               np.mean(total_mask_loss)))
+            self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
         return self.mean_iou(epoch, result)
