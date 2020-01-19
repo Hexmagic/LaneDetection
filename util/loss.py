@@ -45,11 +45,3 @@ class FocalLoss(nn.Module):
             return torch.mean(F_loss)
         else:
             return F_loss
-
-if __name__ == "__main__":
-    a = torch.rand((1, 3, 255, 255))
-    b = torch.rand((1, 3, 255, 255))
-
-    loss = FocalLoss()
-    rt = loss(a, b)
-    print(rt)

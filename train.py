@@ -123,7 +123,7 @@ class Trainer(object):
             optimizer.zero_grad()
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss =loss_func1(out, mask) +loss_func2(out, mask)+loss_func3(sig,mask)
+            mask_loss =loss_func1(out, mask) +loss_func2(sig,mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -164,7 +164,6 @@ class Trainer(object):
             "TA": {i: 0
                    for i in range(8)}
         }
-        i = 0
         loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         loss_func2 = DiceLoss().cuda(device=self.ids[0])
         loss_func3 = FocalLoss().cuda(device=self.ids[0])
@@ -176,7 +175,7 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)+loss_func3(out,mask)
+            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
