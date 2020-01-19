@@ -200,7 +200,7 @@ class Trainer(object):
             else:
                 print("Model Unet++")
                 net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
-            with open('{self.model}_last_gpu.id', 'w') as f:
+            with open(f'{self.model}_last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
 
