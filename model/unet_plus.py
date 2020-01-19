@@ -124,11 +124,10 @@ class up4(nn.Module):
 class outconv(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(outconv, self).__init__()
-        self.upsample = nn.Upsample(scale_factor=4)
+        #self.upsample = nn.Upsample(scale_factor=4)
         self.conv = nn.Conv2d(in_ch, out_ch, 1)
 
     def forward(self, x):
-        x = self.upsample(x)
         x = self.conv(x)
         return x
 
@@ -200,6 +199,7 @@ class Unet_2D(nn.Module):
 
     def forward(self, x):
         #if self.mode == 'train':  # use the whole model when training
+        h,w = x.size()[2:]
         x1 = self.inconv(x)
         x2 = self.down1(x1)
         x3 = self.down2(x2)
@@ -211,6 +211,7 @@ class Unet_2D(nn.Module):
         x12 = self.up31(x21, x11, x1)
         x = self.up3(x, x12, x11, x1)
         #output 0 1 2
+        x = F.interpolate(x,(h,w),mode='bilinear',align_corners=True)
         y2 = self.outconv(x)
         #y0 = self.outconv(x11)
         #y1 = self.outconv(x12)
@@ -224,7 +225,7 @@ class Unet_2D(nn.Module):
         #     return y0
 
 if __name__ == "__main__":
-    data = torch.rand(1,3,256,256)
+    data = torch.rand(1,3,255,846)
     net= Unet_2D(8)
     rtn =net(data)
     print(rtn.shape)
