@@ -109,7 +109,7 @@ class Trainer(object):
         i = 0
         loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        loss_func3 = FocalLoss().cuda(device=self.ids[0])
+        #loss_func3 = FocalLoss().cuda(device=self.ids[0])
         dataprocess.set_description_str("epoch:{}".format(epoch))
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
@@ -123,7 +123,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             mask_loss = loss_func1(out, mask) + loss_func2(
-                sig, mask) + loss_func3(out, mask)
+                sig, mask) #+ loss_func3(out, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -175,14 +175,15 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
+            mask_loss = loss_func1(out, mask) + loss_func2(
+                sig, mask) #+ loss_func3(out, mask)
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
             dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-               np.mean(total_mask_loss)))
+                np.mean(total_mask_loss)))
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
@@ -219,7 +220,7 @@ class Trainer(object):
             # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
-        optimizer = torch.optim.AdamW(net.parameters())
+        optimizer = torch.optim.SGD(net.parameters(),lr=0.001,momentum=0.95,weight_decay=0.01,nesterov=0.2)
         last_MIOU = 0.0
 
         for epoch in range(epochs):
