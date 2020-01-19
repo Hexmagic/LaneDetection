@@ -19,7 +19,7 @@ from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
 from util.label_util import label_to_color_mask
-from util.loss import DiceLoss,FocalLoss
+from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
 from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 from sync_batchnorm import DataParallelWithCallback
@@ -33,7 +33,6 @@ class Trainer(object):
         self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
         self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
         self.ids = self.bootstrap(memory)
-        
 
     def bootstrap(self, memory):
         '''
@@ -123,7 +122,8 @@ class Trainer(object):
             optimizer.zero_grad()
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss =loss_func1(out, mask) +loss_func2(sig,mask)
+            mask_loss = loss_func1(out, mask) + loss_func2(
+                sig, mask) + loss_func3(out, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -164,9 +164,9 @@ class Trainer(object):
             "TA": {i: 0
                    for i in range(8)}
         }
-        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
-        loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        loss_func3 = FocalLoss().cuda(device=self.ids[0])
+        #loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
+        #loss_func2 = DiceLoss().cuda(device=self.ids[0])
+        #loss_func3 = FocalLoss().cuda(device=self.ids[0])
         for batch_item in dataprocess:
             image, mask, _ = batch_item
             if torch.cuda.is_available():
@@ -175,15 +175,15 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
-            total_mask_loss.append(mask_loss.item())
+            #mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)
+            #total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
-            dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-                np.mean(total_mask_loss)))
-            self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
+            #dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
+            #    np.mean(total_mask_loss)))
+            #self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
         return self.mean_iou(epoch, result)
