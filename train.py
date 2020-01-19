@@ -240,7 +240,7 @@ def main():
     #     world_size=world_size,
     #     rank=1,
     # )
-    model = sys.argv[1]
+    model = sys.argv[2]
     assert model in ['unet', 'deeplab']
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
