@@ -122,7 +122,7 @@ class Trainer(object):
             optimizer.zero_grad()
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(sig,mask)
+            mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(sig,mask.long())
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -172,7 +172,7 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(sig,mask)
+            mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(sig,mask.long())
             total_mask_loss.append(mask_loss.detach().item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
