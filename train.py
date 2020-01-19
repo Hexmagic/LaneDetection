@@ -14,6 +14,7 @@ from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
 from model.deeplabv3_plus import DeeplabV3Plus
+from model.unet_plus import Unet_2D
 from util.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
@@ -23,8 +24,10 @@ from util.metric import compute_iou
 from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
 from sync_batchnorm import DataParallelWithCallback
 
+
 class Trainer(object):
-    def __init__(self, memory=MEMORY):
+    def __init__(self, memory=MEMORY, model='deeplab'):
+        self.model = model
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
         self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
@@ -180,13 +183,18 @@ class Trainer(object):
     def load_model(self):
         if os.path.exists(MODELNAME):
             print("train from load model")
-            last_gpu_id = int(open('last_gpu.id', 'r').read().strip())
+            last_gpu_id = int(
+                open(f'{self.model}_last_gpu.id', 'r').read().strip())
             net = torch.load(
                 MODELNAME,
                 map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
             print("train from scratch")
-            net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
+            if self.model == 'deeplab':
+                print("Model Deeplab")
+                net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
+            else:
+                net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
             with open('last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
@@ -197,8 +205,8 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)            
-            net = DataParallel(net,device_ids=self.ids)
+            # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)
+            net = DataParallel(net, device_ids=self.ids)
             # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
@@ -212,9 +220,11 @@ class Trainer(object):
                 miou = self.valid(net, epoch, val_data_batch)
             if miou > last_MIOU:
                 print(f"miou {miou} > last_MIOU {last_MIOU},save model")
-                torch.save(net, os.path.join(os.getcwd(), "laneNet.pth"))
+                torch.save(
+                    net, os.path.join(os.getcwd(),
+                                      f"{self.model}_laneNet.pth"))
                 last_MIOU = miou
-        torch.save(net, os.path.join(os.getcwd(), "finalNet.pth"))
+        torch.save(net, os.path.join(os.getcwd(), f"{self.model}finalNet.pth"))
 
 
 def main():
@@ -229,10 +239,12 @@ def main():
     #     world_size=world_size,
     #     rank=1,
     # )
+    model = sys.argv[1]
+    assert model in ['unet', 'deeplab']
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
         shape, batch, epoch = ele
-        trainer = Trainer(memory=6 if batch == 2 else 9)
+        trainer = Trainer(memory=6 if batch == 2 else 9, model=model)
         trainer.run(batch, shape, epoch)
 
 
