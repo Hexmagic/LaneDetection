@@ -224,7 +224,7 @@ class Trainer(object):
 
         for epoch in range(epochs):
             self.adjust_lr(optimizer, epoch)
-            #self.train(net, epoch, train_data_batch, optimizer)
+            self.train(net, epoch, train_data_batch, optimizer)
             with torch.no_grad():
                 miou = self.valid(net, epoch, val_data_batch)
             if miou > last_MIOU:
