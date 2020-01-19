@@ -145,9 +145,6 @@ class DeeplabV3Plus(Module):
             ReLU(True),
             Conv2d(256, 128, kernel_size=1),
         )
-        self.d1 = Dropout(0.5)
-        self.d2 = Dropout(0.5)
-        self.d3 = Dropout(0.5)
         self.projection = Sequential(SparableConv(256 + 128, 256),
                                      Dropout(0.2), SparableConv(256, 256))
         self.projection2 = Sequential(SparableConv(256 + 64, 256),
@@ -168,9 +165,9 @@ class DeeplabV3Plus(Module):
         low_feature, middle_feature, feature_map = self.backbone(x)
         feature_map = self.aspp(feature_map)
         low_feature = self.low_projection(low_feature)
-        low_feature = self.d1(low_feature)
+        #low_feature = self.d1(low_feature)
         middle_feature = self.mid_projection(middle_feature)
-        middle_feature = self.d2(middle_feature)
+        #middle_feature = self.d2(middle_feature)
 
         h, w = middle_feature.size()[2:]
 
@@ -188,7 +185,7 @@ class DeeplabV3Plus(Module):
 
         feature_map = torch.cat([low_feature, feature_map], dim=1)
         feature_map = self.projection2(feature_map)
-        feature_map = self.d3(feature_map)
+        #feature_map = self.d3(feature_map)
         h, w = x.size()[2:]
         feature_map = F.interpolate(feature_map, [h, w],
                                     mode='bilinear',
