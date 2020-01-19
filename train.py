@@ -173,7 +173,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(out,mask.long())
-            total_mask_loss.append(mask_loss.detach().item())
+            total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
