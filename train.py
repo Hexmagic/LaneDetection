@@ -33,9 +33,7 @@ class Trainer(object):
         self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
         self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
         self.ids = self.bootstrap(memory)
-        self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
-        self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        self.loss_func3 = FocalLoss().cuda(device=self.ids[0])
+        
 
     def bootstrap(self, memory):
         '''
@@ -110,6 +108,9 @@ class Trainer(object):
         total_mask_loss = []
         dataprocess = tqdm(dataLoader)
         i = 0
+        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
+        loss_func2 = DiceLoss().cuda(device=self.ids[0])
+        loss_func3 = FocalLoss().cuda(device=self.ids[0])
         dataprocess.set_description_str("epoch:{}".format(epoch))
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
@@ -122,7 +123,7 @@ class Trainer(object):
             optimizer.zero_grad()
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = self.loss_func1(out, mask) + self.loss_func2(out, mask)+self.loss_func3(sig,mask)
+            mask_loss =loss_func1(out, mask) +loss_func2(out, mask)+loss_func3(sig,mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -164,6 +165,9 @@ class Trainer(object):
                    for i in range(8)}
         }
         i = 0
+        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
+        loss_func2 = DiceLoss().cuda(device=self.ids[0])
+        loss_func3 = FocalLoss().cuda(device=self.ids[0])
         for batch_item in dataprocess:
             image, mask, _ = batch_item
             if torch.cuda.is_available():
@@ -172,7 +176,7 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = self.loss_func1(out, mask) + self.loss_func2(sig, mask)+self.loss_func3(out,mask)
+            mask_loss = loss_func1(out, mask) + loss_func2(sig, mask)+loss_func3(out,mask)
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
@@ -221,7 +225,7 @@ class Trainer(object):
 
         for epoch in range(epochs):
             self.adjust_lr(optimizer, epoch)
-            self.train(net, epoch, train_data_batch, optimizer)
+            #self.train(net, epoch, train_data_batch, optimizer)
             with torch.no_grad():
                 miou = self.valid(net, epoch, val_data_batch)
             if miou > last_MIOU:
