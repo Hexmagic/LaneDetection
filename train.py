@@ -63,6 +63,10 @@ class Trainer(object):
             lr = 5e-4
         elif epoch == 15:
             lr = 3e-4
+        elif epoch == 20:
+            lr = 5e-4
+        elif epoch == 25:
+            lr = 4e-4
         else:
             return
         for param_group in optimizer.param_groups:

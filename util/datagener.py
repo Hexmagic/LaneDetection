@@ -71,9 +71,7 @@ def get_train_loader(batch_size=2, size=[846, 255]):
         ToTensor(),
         RandomErasing(scale=(0.02, 0.05), ratio=(0.3, 1)),
     ])
-    dataset = LanDataSet("data_list/train.csv",
-                                 transform=transform,
-                                 size=size)
+    dataset = LanDataSet("data_list/train.csv", transform=transform, size=size)
     # sampler = torch.utils.data.distributed.DistributedSampler(
     #     LanDataSet,
     #     num_replicas=4,
@@ -85,18 +83,19 @@ def get_train_loader(batch_size=2, size=[846, 255]):
                       drop_last=True,
                       num_workers=4,
                       pin_memory=True)
-                    #   sampler=sampler)
+    #   sampler=sampler)
 
 
 def get_test_loader(batch_size=2, size=[846, 255]):
     return DataLoader(LanDataSet("data_list/test.csv", size=size),
                       shuffle=True,
                       batch_size=batch_size,
-                      num_workers=batch_size,
+                      num_workers=4,
                       pin_memory=True)
 
 
 def get_valid_loader(batch_size=2, size=[846, 255]):
     return DataLoader(LanDataSet("data_list/valid.csv", size=size),
                       shuffle=True,
+                      num_workers=4,
                       batch_size=batch_size)
