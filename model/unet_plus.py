@@ -199,26 +199,32 @@ class Unet_2D(nn.Module):
         self.mode = mode
 
     def forward(self, x):
-        if self.mode == 'train':  # use the whole model when training
-            x1 = self.inconv(x)
-            x2 = self.down1(x1)
-            x3 = self.down2(x2)
-            x4 = self.down3(x3)
-            x = self.up1(x4, x3)
-            x21 = self.up20(x3, x2)
-            x = self.up2(x, x21, x2)
-            x11 = self.up30(x2, x1)
-            x12 = self.up31(x21, x11, x1)
-            x = self.up3(x, x12, x11, x1)
-            #output 0 1 2
-            y2 = self.outconv(x)
-            y0 = self.outconv(x11)
-            y1 = self.outconv(x12)
-            return y0, y1, y2
-        else:  # prune the model when testing
-            x1 = self.inconv(x)
-            x2 = self.down1(x1)
-            x11 = self.up30(x2, x1)
-            # output 0
-            y0 = self.outconv(x11)
-            return y0
+        #if self.mode == 'train':  # use the whole model when training
+        x1 = self.inconv(x)
+        x2 = self.down1(x1)
+        x3 = self.down2(x2)
+        x4 = self.down3(x3)
+        x = self.up1(x4, x3)
+        x21 = self.up20(x3, x2)
+        x = self.up2(x, x21, x2)
+        x11 = self.up30(x2, x1)
+        x12 = self.up31(x21, x11, x1)
+        x = self.up3(x, x12, x11, x1)
+        #output 0 1 2
+        y2 = self.outconv(x)
+        #y0 = self.outconv(x11)
+        #y1 = self.outconv(x12)
+        return  y2
+        # else:  # prune the model when testing
+        #     x1 = self.inconv(x)
+        #     x2 = self.down1(x1)
+        #     x11 = self.up30(x2, x1)
+        #     # output 0
+        #     y0 = self.outconv(x11)
+        #     return y0
+
+if __name__ == "__main__":
+    data = torch.rand(1,3,256,256)
+    net= Unet_2D(8)
+    rtn =net(data)
+    print(rtn.shape)
