@@ -194,6 +194,7 @@ class Trainer(object):
                 print("Model Deeplab")
                 net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
             else:
+                print("Model Unet++")
                 net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
             with open('last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
