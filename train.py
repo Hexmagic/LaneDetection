@@ -28,21 +28,24 @@ from util.metric import compute_iou
 
 
 class Trainer(object):
-    def __init__(self, memory=MEMORY, model='deeplab'):
+    def __init__(self, gpu, optim='adam', memory=MEMORY, model='deeplab'):
         self.model = model
+        self.optim = optim
+        self.gpu = gpu
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
-        self.trainF = open(os.path.join(LOGPATH, 'train.txt'), 'w+')
-        self.testF = open(os.path.join(LOGPATH, 'test.txt'), 'w+')
+        self.trainF = open(os.path.join(LOGPATH, f'{self.model}_train.txt'),
+                           'w')
+        self.testF = open(os.path.join(LOGPATH, f'{self.model}_test.txt'), 'w')
         self.ids = self.bootstrap(memory)
 
     def bootstrap(self, memory):
         '''
         获取可用的GPU
         '''
-        argv = sys.argv
-        if len(argv) > 1:
-            ids = list(map(int, argv[1].split(',')))
+
+        if self.gpu:
+            ids = list(map(int, self.gpu.split(",")))
         else:
             ava_gpu_index = wait_gpu(need=memory)
             ids = ava_gpu_index
@@ -79,19 +82,13 @@ class Trainer(object):
         if epoch == 0:
             lr = 1e-2
         elif epoch == 2:
-            lr = 4e-4
+            lr = 5e-3
         elif epoch == 5:
-            lr = 3e-4
+            lr = 3e-3
         elif epoch == 8:
-            lr = 4e-4
+            lr = 2e-3
         elif epoch == 13:
-            lr = 3e-4
-        elif epoch == 18:
-            lr = 2e-4
-        elif epoch == 22:
-            lr = 3e-4
-        else:
-            return
+            lr = 1e-3
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
@@ -243,25 +240,29 @@ class Trainer(object):
         net = self.load_model()
         if len(self.ids) > 1:
             print("Use Mutil GPU Train Model")
-            # net = torch.nn.SyncBatchNorm.convert_sync_batchnorm(net)
             net = DataParallel(net, device_ids=self.ids)
-            # net = DistributedDataParallel(net, device_ids=self.ids)
-            #net = DataParallelWithCallback(net, device_ids=self.ids)
-            #patch_replication_callback(net)
-        optimizer = torch.optim.SGD(net.parameters(),
-                                    lr=0.001,
-                                    momentum=0.95,
-                                    weight_decay=0.01,
-                                    nesterov=True)
+        if self.optim.lower() == 'sgd':
+            optimizer = torch.optim.SGD(net.parameters(),
+                                        lr=0.01,
+                                        momentum=0.95,
+                                        weight_decay=0.01,
+                                        nesterov=True)
+            adjust_lr = self.adjust_lr_sgd
+        else:
+            optimizer = torch.optim.AdamW(net.parameters())
+            adjust_lr = self.adjust_lr_adam
+
         last_MIOU = 0.0
 
         for epoch in range(epochs):
-            self.adjust_lr(optimizer, epoch)
+            adjust_lr(optimizer, epoch)
             self.train(net, epoch, train_data_batch, optimizer)
             with torch.no_grad():
                 miou = self.valid(net, epoch, val_data_batch)
             if miou > last_MIOU:
-                print(f"miou {miou} > last_MIOU {last_MIOU},save model")
+                msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
+                print(msg)
+                self.testF.write(msg)
                 torch.save(
                     net, os.path.join(os.getcwd(),
                                       f"{self.model}_laneNet.pth"))
@@ -274,14 +275,22 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', type=str, help='输入GPU的ID,或者以逗号分隔的ID列表')
     parser.add_argument('--model', type=str, help='模型名称，deeplab或者unet++')
-    parser.add_argument('--stage',type=int,help='训练阶段，默认为1',default=1)
+    parser.add_argument('--stage', type=int, help='训练阶段，默认为1', default=1)
+    parser.add_argument('--optim', type=str, help='优化器，Adam或者SGD')
     args = parser.parse_args()
+
     model = args.model
     assert model in ['unet', 'deeplab', 'unet++']
-    for ele in [SIZE1, SIZE2, SIZE3]:
-        print(f"Train Size {ele}")
+
+    stages = [SIZE1, SIZE2, SIZE3]
+    stages = stages[(args.stage - 1):]
+    for ele in stages:
+        print(f"Train Size {ele} Stage {args.stage}")
         shape, batch, epoch = ele
-        trainer = Trainer(memory=6 if batch == 2 else 9, model=model)
+        trainer = Trainer(memory=6 if batch == 2 else 9,
+                          model=model,
+                          optim=args.optim,
+                          gpu=args.gpu)
         trainer.run(batch, shape, epoch)
 
 
