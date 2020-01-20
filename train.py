@@ -18,7 +18,6 @@ from model.deeplabv3_plus import DeeplabV3Plus
 from model.unet import Unet
 from model.unet_plus import Unet_2D
 from setting import LOGPATH, MEMORY, MODELNAME, SIZE1, SIZE2, SIZE3
-from sync_batchnorm import DataParallelWithCallback
 from data.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
