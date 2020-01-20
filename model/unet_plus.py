@@ -37,13 +37,13 @@ class DownBlock(Module):
 
 
 class Encode(Module):
-    def __init__(self):
+    def __init__(self, stride=16):
         super(Encode, self).__init__()
-        self.down1 = DownBlock(3, 64)
-        self.down2 = DownBlock(64, 128)
-        self.down3 = DownBlock(128, 256)
-        self.down4 = DownBlock(256, 512)
-        self.down5 = DownBlock(512, 1024, stride=1)
+        self.down1 = DownBlock(3, stride)
+        self.down2 = DownBlock(stride, stride * 2)
+        self.down3 = DownBlock(stride * 2, stride * 4)
+        self.down4 = DownBlock(stride * 4, stride * 8)
+        self.down5 = DownBlock(stride * 8, stride * 16, stride=1)
 
     def forward(self, x):
         a, x = self.down1(x)
@@ -68,46 +68,27 @@ class UpBlock(Module):
 
 
 class UnetPlus(Module):
-    def __init__(self, n_class):
+    def __init__(self, n_class, stride=16):
         super(UnetPlus, self).__init__()
-        self.encode = Encode()
-        self.u31 = UpBlock(1024, 512)
+        self.encode = Encode(stride=stride)
+        self.u31 = UpBlock(stride * 16, stride * 8)
 
-        self.c20_21 = ConvBlock(256, 256)
-        self.u21 = UpBlock(512, 256)
-        self.c21_22 = ConvBlock(256, 256)
-        self.c20_22 = ConvBlock(256, 256)
+        self.u21 = UpBlock(stride * 8, stride * 4)
+        self.u22 = UpBlock(stride * 8, stride * 4)
 
-        self.u22 = UpBlock(512, 256)
+        self.u11 = UpBlock(stride * 4, stride * 2)
+        self.u12 = UpBlock(stride * 4, stride * 2)
+        self.u13 = UpBlock(stride * 4, stride * 2)
 
-        self.c10_11 = ConvBlock(128, 128)
-        self.u11 = UpBlock(256, 128)
-        self.c10_12 = ConvBlock(128, 128)
-        self.c10_13 = ConvBlock(128, 128)
-        self.c11_12 = ConvBlock(128, 128)
-        self.u12 = UpBlock(256, 128)
-        self.c11_13 = ConvBlock(128, 128)
-        self.c12_13 = ConvBlock(128, 128)
-        self.u13 = UpBlock(256, 128)
+        self.u01 = UpBlock(stride * 2, stride)
+        self.u02 = UpBlock(stride * 2, stride)
+        self.u03 = UpBlock(stride * 2, stride)
+        self.u04 = UpBlock(stride * 2, stride, last=True)
 
-        self.c00_01 = ConvBlock(64, 64)
-        self.u01 = UpBlock(128, 64)
-        self.c00_02 = ConvBlock(64, 64)
-        self.c00_03 = ConvBlock(64, 64)
-        self.c00_04 = ConvBlock(64, 64)
-        self.c01_02 = ConvBlock(64, 64)
-        self.c01_03 = ConvBlock(64, 64)
-        self.c01_04 = ConvBlock(64, 64)
-        self.u02 = UpBlock(128, 64)
-        self.c02_03 = ConvBlock(64, 64)
-        self.c02_04 = ConvBlock(64, 64)
-        self.u03 = UpBlock(128, 64)
-        self.c03_04 = ConvBlock(64, 64)
-        self.u04 = UpBlock(128, 64, last=True)
-        self.deepsuper1 = ConvBlock(64, n_class, k=1, p=0)
-        self.deepsuper2 = ConvBlock(64, n_class, k=1, p=0)
-        self.deepsuper3 = ConvBlock(64, n_class, k=1, p=0)
-        self.deepsuper4 = ConvBlock(64, n_class, k=1, p=0)
+        self.deepsuper1 = ConvBlock(stride, n_class, k=1, p=0)
+        self.deepsuper2 = ConvBlock(stride, n_class, k=1, p=0)
+        self.deepsuper3 = ConvBlock(stride, n_class, k=1, p=0)
+        self.deepsuper4 = ConvBlock(stride, n_class, k=1, p=0)
         self.classifer = Conv2d(32, n_class, 1)
 
     def forward(self, x):
@@ -123,41 +104,36 @@ class UnetPlus(Module):
                             x20.size()[2:],
                             mode='bilinear',
                             align_corners=True)
-        x21 = self.u21(x30, self.c20_21(x20))
+        x21 = self.u21(x30, x20)
         x31 = F.interpolate(x31,
                             x30.size()[2:],
                             mode='bilinear',
                             align_corners=True)
-        x22 = self.u22(x31, self.c21_22(x21) + self.c20_22(x20))
+        x22 = self.u22(x31, x21 + x20)
 
         x20 = F.interpolate(x20,
                             x10.size()[2:],
                             mode='bilinear',
                             align_corners=True)
-        x11 = self.u11(x20, self.c10_11(x10))
+        x11 = self.u11(x20, x10)
         x21 = F.interpolate(x21,
                             x10.size()[2:],
                             mode='bilinear',
                             align_corners=True)
-        x12 = self.u12(x21, self.c11_12(x11)) + self.c10_12(x10)
+        x12 = self.u12(x21, x11 + x10)
         x22 = F.interpolate(x22,
                             x20.size()[2:],
                             mode='bilinear',
                             align_corners=True)
-        x13 = self.u13(x22,
-                       self.c12_13(x12) + self.c11_13(x11) + self.c10_13(x10))
+        x13 = self.u13(x22, x12 + x11 + x10)
         x10 = F.interpolate(x10, (h, w), mode='bilinear', align_corners=True)
-        x01 = self.u01(x10, self.c00_01(x00))
+        x01 = self.u01(x10, x00)
         x11 = F.interpolate(x11, (h, w), mode='bilinear', align_corners=True)
-        x02 = self.u02(x11, self.c01_02(x01) + self.c00_02(x00))
+        x02 = self.u02(x11, x01 + x00)
         x12 = F.interpolate(x12, (h, w), mode='bilinear', align_corners=True)
-        x03 = self.u03(x12,
-                       self.c02_03(x02) + self.c01_03(x01) + self.c00_03(x00))
+        x03 = self.u03(x12, x02 + x01 + x00)
         x13 = F.interpolate(x13, (h, w), align_corners=True, mode='bilinear')
-        x04 = self.u04(
-            x13,
-            self.c03_04(x03) + self.c02_04(x02) + self.c01_04(x01) +
-            self.c00_04(x00))
+        x04 = self.u04(x13, x03 + x02 + x01 + x00)
         deepsuper = torch.cat([
             self.deepsuper1(x01),
             self.deepsuper2(x02),
@@ -170,10 +146,10 @@ class UnetPlus(Module):
 
 if __name__ == "__main__":
     import torch
-    SIZE1 = [[846, 255], 2, 15]
-    SIZE2 = [[1128, 340], 2, 10]
-    SIZE3 = [[1692, 510], 1, 15]
-    data = torch.rand((1, 3, 846, 255))
-    net = UnetPlus(8)
+    from thop import profile
+    net = UnetPlus(8,stride=32)
+    data = torch.rand((1, 3, 255, 288))
+    rtn = profile(net, inputs=(data, ))
+    print(rtn)
     rtn = net(data)
     print(rtn.shape)
