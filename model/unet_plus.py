@@ -13,6 +13,8 @@ class SparableConv(Module):
                  dilation=1):
         super(SparableConv, self).__init__()
         layers = [
+            BatchNorm2d(in_channel),
+            LeakyReLU(),
             Conv2d(in_channel,
                    in_channel,
                    kernel_size=3,
@@ -20,11 +22,11 @@ class SparableConv(Module):
                    groups=in_channel,
                    stride=stride,
                    dilation=dilation,
-                   bias=False)
+                   bias=False),
+            BatchNorm2d(in_channel),
+            Conv2d(in_channel, out_channel, kernel_size=1)
         ]
-        layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
-        if relu:
-            layers += [BatchNorm2d(out_channel), LeakyReLU()]
+
         self.net = Sequential(*layers)
 
     def forward(self, x):
