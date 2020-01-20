@@ -127,7 +127,7 @@ class Trainer(object):
     def train(self, net, epoch, dataLoader, optimizer):
         net.train()
         total_mask_loss = []
-        dataprocess = tqdm(dataLoader)
+        dataprocess = tqdm(dataLoader, dynamic_ncols=True)
         i = 0
         loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
         loss_func2 = DiceLoss().cuda(device=self.ids[0])
@@ -179,7 +179,7 @@ class Trainer(object):
     def valid(self, net, epoch, dataLoader):
         net.eval()
         total_mask_loss = []
-        dataprocess = tqdm(dataLoader)
+        dataprocess = tqdm(dataLoader, dynamic_ncols=True)
         result = {
             "TP": {i: 0
                    for i in range(8)},
