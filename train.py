@@ -19,10 +19,10 @@ from model.unet import Unet
 from model.unet_plus import Unet_2D
 from setting import LOGPATH, MEMORY, MODELNAME, SIZE1, SIZE2, SIZE3
 from sync_batchnorm import DataParallelWithCallback
-from util.datagener import (get_test_loader, get_train_loader,
+from data.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask
+from data.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
 

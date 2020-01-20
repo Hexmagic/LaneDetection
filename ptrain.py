@@ -12,9 +12,9 @@ from visdom import Visdom
 from model.project import Projection
 from setting import MODELNAME, SIZE2
 from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask
+from data.label_util import label_to_color_mask
 from util.loss import DiceLoss
-from util.mask_data import train_loader
+from data.mask_data import train_loader
 from util.metric import compute_iou
 
 plt = sys.platform

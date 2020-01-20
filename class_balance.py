@@ -1,4 +1,4 @@
-from util.datagener import get_test_loader, get_train_loader, get_valid_loader
+from data.datagener import get_test_loader, get_train_loader, get_valid_loader
 from collections import defaultdict
 from tqdm import tqdm
 import sys

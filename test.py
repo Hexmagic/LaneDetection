@@ -14,9 +14,9 @@ from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from setting import MEMORY, MODELNAME, PREDICT_PATH, SIZE3
-from util.datagener import get_test_loader, get_valid_loader
+from data.datagener import get_test_loader, get_valid_loader
 from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask,mask_to_label
+from data.label_util import label_to_color_mask, mask_to_label
 from util.loss import DiceLoss
 from util.metric import compute_iou
 
@@ -112,11 +112,13 @@ class Tester(object):
                     if self.visdom:
                         self.visual(image, sig, mask, total_mask_loss)
                 # 计算IOU
-                pred = F.interpolate(sig,(510*2,1692*2),mode='bilinear',align_corners=True)
-                pred = torch.argmax(pred,dim=1)
-                img = cv2.imread(names[0],0)
-                img = img[690:,:]
-                mask= mask_to_label(img)
+                pred = F.interpolate(sig, (510 * 2, 1692 * 2),
+                                     mode='bilinear',
+                                     align_corners=True)
+                pred = torch.argmax(pred, dim=1)
+                img = cv2.imread(names[0], 0)
+                img = img[690:, :]
+                mask = mask_to_label(img)
                 mask = torch.stack([torch.from_numpy(mask)])
                 self.result = compute_iou(pred, mask, self.result)
 

@@ -12,10 +12,10 @@ from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
 from model.deeplabv3_plus import DeeplabV3Plus
-from util.datagener import (get_test_loader, get_train_loader,
+from data.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
 from util.gpu import wait_gpu
-from util.label_util import label_to_color_mask
+from data.label_util import label_to_color_mask
 from util.loss import DiceLoss
 from util.metric import compute_iou
 from setting import MEMORY, LOGPATH, MODELNAME, SIZE1, SIZE2, SIZE3
