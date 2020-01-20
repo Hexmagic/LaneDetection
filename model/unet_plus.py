@@ -7,7 +7,7 @@ class ConvBlock(Module):
     def __init__(self, in_channel, out_channel, k=3, p=1, g=1, d=1, s=1):
         super(ConvBlock, self).__init__()
         self.net = Sequential(
-            BatchNorm2d(in_channel), ReLU(),
+            BatchNorm2d(in_channel), ReLU(True),
             Conv2d(in_channel,
                    out_channel,
                    kernel_size=k,

@@ -16,7 +16,7 @@ from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
 from model.unet import Unet
-from model.unet_plus import Unet_2D
+from model.unet_plus import UnetPlus
 from setting import LOGPATH, MEMORY, MODELNAME, SIZE1, SIZE2, SIZE3
 from data.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -226,7 +226,7 @@ class Trainer(object):
                 net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
             elif self.model == 'unet++':
                 print("Model Unet++")
-                net = Unet_2D(n_classes=8).cuda(device=self.ids[0])
+                net = UnetPlus(8).cuda(device=self.ids[0])
             else:
                 print("MOdeul Unet")
                 net = Unet(n_class=8).cuda(device=self.ids[0])
