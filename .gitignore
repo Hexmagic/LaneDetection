@@ -16,7 +16,7 @@ log/*
 play/
 benz/*
 bmw/*
-jbg/
+
 *.jpg
 # my ignore
 .vscode
@@ -24,7 +24,7 @@ parameter.pkl
 .mypy_cache
 # C extensions
 *.so
-data/*
+
 
 *.jpg
 *.svg
