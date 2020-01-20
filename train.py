@@ -49,12 +49,35 @@ class Trainer(object):
         print(f"Use Device  {ids} Train")
         return ids
 
-    def adjust_lr(self, optimizer, epoch):
+    def adjust_lr_adam(self, optimizer, epoch):
         '''
         根据epoch衰减学习率
         '''
         if epoch == 0:
             lr = 6e-4
+        elif epoch == 2:
+            lr = 4e-4
+        elif epoch == 5:
+            lr = 3e-4
+        elif epoch == 8:
+            lr = 4e-4
+        elif epoch == 13:
+            lr = 3e-4
+        elif epoch == 18:
+            lr = 2e-4
+        elif epoch == 22:
+            lr = 3e-4
+        else:
+            return
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
+
+    def adjust_lr_sgd(self, optimizer, epoch):
+        '''
+        根据epoch衰减学习率
+        '''
+        if epoch == 0:
+            lr = 1e-2
         elif epoch == 2:
             lr = 4e-4
         elif epoch == 5:
@@ -125,7 +148,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             mask_loss = loss_func1(out, mask) + loss_func2(
-                sig, mask) #+ loss_func3(out, mask)
+                sig, mask)  #+ loss_func3(out, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -178,7 +201,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             mask_loss = loss_func1(out, mask) + loss_func2(
-                sig, mask) #+ loss_func3(out, mask)
+                sig, mask)  #+ loss_func3(out, mask)
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
@@ -225,7 +248,11 @@ class Trainer(object):
             # net = DistributedDataParallel(net, device_ids=self.ids)
             #net = DataParallelWithCallback(net, device_ids=self.ids)
             #patch_replication_callback(net)
-        optimizer = torch.optim.SGD(net.parameters(),lr=0.001,momentum=0.95,weight_decay=0.01,nesterov=0.2)
+        optimizer = torch.optim.SGD(net.parameters(),
+                                    lr=0.001,
+                                    momentum=0.95,
+                                    weight_decay=0.01,
+                                    nesterov=True)
         last_MIOU = 0.0
 
         for epoch in range(epochs):
@@ -244,17 +271,12 @@ class Trainer(object):
 
 def main():
     import argparse
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('--local_rank', type=int, default=0)
-    # torch.cuda.set_device(5)
-    # world_size = 4
-    # torch.distributed.init_process_group(
-    #     'nccl',
-    #     init_method='env://',
-    #     world_size=world_size,
-    #     rank=1,
-    # )
-    model = sys.argv[2]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--gpu', type=str, help='输入GPU的ID,或者以逗号分隔的ID列表')
+    parser.add_argument('--model', type=str, help='模型名称，deeplab或者unet++')
+    parser.add_argument('--stage',type=int,help='训练阶段，默认为1',default=1)
+    args = parser.parse_args()
+    model = args.model
     assert model in ['unet', 'deeplab', 'unet++']
     for ele in [SIZE1, SIZE2, SIZE3]:
         print(f"Train Size {ele}")
