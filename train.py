@@ -212,12 +212,13 @@ class Trainer(object):
         return self.mean_iou(epoch, result)
 
     def load_model(self):
-        if os.path.exists(MODELNAME):
+        model_name = f'{self.model}_{MODELNAME}'
+        if os.path.exists(model_name):
             print("train from load model")
             last_gpu_id = int(
                 open(f'{self.model}_last_gpu.id', 'r').read().strip())
             net = torch.load(
-                MODELNAME,
+                model_name,
                 map_location={f'cuda:{last_gpu_id}': f"cuda:{self.ids[0]}"})
         else:
             print("train from scratch")
