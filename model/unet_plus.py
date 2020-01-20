@@ -3,6 +3,34 @@ import torch
 import torch.nn.functional as F
 
 
+class SparableConv(Module):
+    def __init__(self,
+                 in_channel,
+                 out_channel,
+                 relu=True,
+                 stride=1,
+                 padding=1,
+                 dilation=1):
+        super(SparableConv, self).__init__()
+        layers = [
+            Conv2d(in_channel,
+                   in_channel,
+                   kernel_size=3,
+                   padding=dilation,
+                   groups=in_channel,
+                   stride=stride,
+                   dilation=dilation,
+                   bias=False)
+        ]
+        layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
+        if relu:
+            layers += [BatchNorm2d(out_channel), ReLU(True)]
+        self.net = Sequential(*layers)
+
+    def forward(self, x):
+        return self.net(x)
+
+
 class ConvBlock(Module):
     def __init__(self, in_channel, out_channel, k=3, p=1, g=1, d=1, s=1):
         super(ConvBlock, self).__init__()
@@ -12,7 +40,7 @@ class ConvBlock(Module):
                    out_channel,
                    kernel_size=k,
                    padding=p,
-                   groups=g,
+                   groups=out_channel,
                    dilation=d,
                    stride=s))
 
@@ -21,10 +49,9 @@ class ConvBlock(Module):
 
 
 class DownBlock(Module):
-    def __init__(self, in_channel, out_channel, stride=2):
+    def __init__(self, in_channel, out_channel, stride=2, dilation=1):
         super(DownBlock, self).__init__()
-        self.conv = Sequential(ConvBlock(in_channel, out_channel),
-                               ConvBlock(out_channel, out_channel))
+        self.conv = Sequential(SparableConv(in_channel, out_channel,dilation=dilation))
         if stride == 2:
             self.down = MaxPool2d(kernel_size=3, padding=1, stride=2)
         else:
@@ -42,8 +69,8 @@ class Encode(Module):
         self.down1 = DownBlock(3, stride)
         self.down2 = DownBlock(stride, stride * 2)
         self.down3 = DownBlock(stride * 2, stride * 4)
-        self.down4 = DownBlock(stride * 4, stride * 8)
-        self.down5 = DownBlock(stride * 8, stride * 16, stride=1)
+        self.down4 = DownBlock(stride * 4, stride * 8, dilation=2)
+        self.down5 = DownBlock(stride * 8, stride * 16, stride=1, dilation=4)
 
     def forward(self, x):
         a, x = self.down1(x)
@@ -57,9 +84,9 @@ class Encode(Module):
 class UpBlock(Module):
     def __init__(self, in_channel, out_channel, last=False):
         super(UpBlock, self).__init__()
-        self.conv = Sequential(ConvBlock(in_channel, out_channel),
-                               ConvBlock(out_channel, out_channel))
-        self.proj = ConvBlock(in_channel, out_channel)
+        self.conv = Sequential(SparableConv(in_channel, out_channel),
+                               SparableConv(out_channel, out_channel))
+        self.proj = SparableConv(in_channel, out_channel)
 
     def forward(self, x, short):
         x = self.proj(x)
@@ -147,7 +174,7 @@ class UnetPlus(Module):
 if __name__ == "__main__":
     import torch
     from thop import profile
-    net = UnetPlus(8,stride=32)
+    net = UnetPlus(8, stride=64)
     data = torch.rand((1, 3, 255, 288))
     rtn = profile(net, inputs=(data, ))
     print(rtn)
