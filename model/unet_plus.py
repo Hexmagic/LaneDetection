@@ -118,7 +118,7 @@ class UnetPlus(Module):
         self.deepsuper3 = ConvBlock(stride, n_class, k=1, p=0)
         self.deepsuper4 = ConvBlock(stride, n_class, k=1, p=0)
         self.classifer = Conv2d(32, n_class, 1)
-        for layer in self.modules:
+        for layer in self.modules():
             if isinstance(layer, Conv2d):
                 init.kaiming_normal_(layer.weight.data, mode='fan_out')
 
