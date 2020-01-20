@@ -24,7 +24,7 @@ class SparableConv(Module):
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
-            layers += [BatchNorm2d(out_channel), ReLU(True)]
+            layers += [BatchNorm2d(out_channel), LeakyReLU()]
         self.net = Sequential(*layers)
 
     def forward(self, x):
@@ -51,7 +51,8 @@ class ConvBlock(Module):
 class DownBlock(Module):
     def __init__(self, in_channel, out_channel, stride=2, dilation=1):
         super(DownBlock, self).__init__()
-        self.conv = Sequential(SparableConv(in_channel, out_channel,dilation=dilation))
+        self.conv = Sequential(
+            SparableConv(in_channel, out_channel, dilation=dilation))
         if stride == 2:
             self.down = MaxPool2d(kernel_size=3, padding=1, stride=2)
         else:
@@ -117,6 +118,9 @@ class UnetPlus(Module):
         self.deepsuper3 = ConvBlock(stride, n_class, k=1, p=0)
         self.deepsuper4 = ConvBlock(stride, n_class, k=1, p=0)
         self.classifer = Conv2d(32, n_class, 1)
+        for layer in self.modules:
+            if isinstance(layer, Conv2d):
+                init.kaiming_normal_(layer.weight.data, mode='fan_out')
 
     def forward(self, x):
         h, w = x.size()[2:]
