@@ -1,231 +1,179 @@
-##########################################
-# @subject : Unet++ implementation       #
-# @author  : perryxin                    #
-# @date    : 2018.12.27                  #
-##########################################
-## pytorch implementation of unet++ , just use its main idea, the model is not the same as the origin unet++ mentioned in paper
-## paper : UNet++: A Nested U-Net Architecture for Medical Image Segmentation
-## https://arxiv.org/abs/1807.10165
+from torch.nn import *
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
 
-class double_conv2(nn.Module):
-    '''(conv-BN-ReLU)X2 :   in_ch  , out_ch , out_ch    '''
-    def __init__(self, in_ch, out_ch):
-        super(double_conv2, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, 3, padding=2, dilation=2),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),  # True means cover the origin input
-            nn.Conv2d(out_ch, out_ch, 3, padding=3, dilation=3),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True))
+class ConvBlock(Module):
+    def __init__(self, in_channel, out_channel, k=3, p=1, g=1, d=1, s=1):
+        super(ConvBlock, self).__init__()
+        self.net = Sequential(
+            BatchNorm2d(in_channel), ReLU(),
+            Conv2d(in_channel,
+                   out_channel,
+                   kernel_size=k,
+                   padding=p,
+                   groups=g,
+                   dilation=d,
+                   stride=s))
 
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        return self.net(x)
 
 
-class down(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(down, self).__init__()
-        self.mpconv = nn.Sequential(nn.MaxPool2d(2),
-                                    double_conv(in_ch, out_ch))
-
-    def forward(self, x):
-        x = self.mpconv(x)
-        return x
-
-
-class up(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(up, self).__init__()
-        if 0:
-            self.up = nn.Sequential(
-                nn.ConvTranspose3d(in_ch * 2 // 3,
-                                   in_ch * 2 // 3,
-                                   kernel_size=2,
-                                   stride=2,
-                                   padding=0),
-                nn.BatchNorm3d(in_ch * 2 // 3),
-                nn.ReLU(inplace=True),
-            )
+class DownBlock(Module):
+    def __init__(self, in_channel, out_channel, stride=2):
+        super(DownBlock, self).__init__()
+        self.conv = Sequential(ConvBlock(in_channel, out_channel),
+                               ConvBlock(out_channel, out_channel))
+        if stride == 2:
+            self.down = MaxPool2d(kernel_size=3, padding=1, stride=2)
         else:
-            self.up = nn.Upsample(scale_factor=2)
-        self.conv = double_conv2(in_ch, out_ch)
-
-    def forward(self, x1, x2):  # x1--up , x2 ---down
-        x1 = self.up(x1)
-        diffX = x1.size()[2] - x2.size()[2]
-        diffY = x2.size()[3] - x1.size()[3]
-        x1 = F.pad(x1, (
-            diffY // 2,
-            diffY - diffY // 2,
-            diffX // 2,
-            diffX - diffX // 2,
-        ))
-        x = torch.cat([x2, x1], dim=1)
-        x = self.conv(x)
-        return x
-
-
-class up3(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(up3, self).__init__()
-        if 0:
-            self.up = nn.Sequential(
-                nn.ConvTranspose3d(in_ch * 2 // 3,
-                                   in_ch * 2 // 3,
-                                   kernel_size=2,
-                                   stride=2,
-                                   padding=0),
-                nn.BatchNorm3d(in_ch * 2 // 3),
-                nn.ReLU(inplace=True),
-            )
-        else:
-            self.up = nn.Upsample(scale_factor=2)
-        self.conv = double_conv2(in_ch, out_ch)
-
-    def forward(self, x1, x2, x3):
-        # print(x1.shape)
-        x1 = self.up(x1)
-        x = torch.cat([x3, x2, x1], dim=1)
-        x = self.conv(x)
-        return x
-
-
-class up4(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(up4, self).__init__()
-        if 0:
-            self.up = nn.Sequential(
-                nn.ConvTranspose3d(in_ch * 2 // 3,
-                                   in_ch * 2 // 3,
-                                   kernel_size=2,
-                                   stride=2,
-                                   padding=0),
-                nn.BatchNorm3d(in_ch * 2 // 3),
-                nn.ReLU(inplace=True),
-            )
-        else:
-            self.up = nn.Upsample(scale_factor=2)
-        self.conv = double_conv2(in_ch, out_ch)
-
-    def forward(self, x1, x2, x3, x4):  # x1--up , x2 ---down
-        # print(x1.shape)
-        x1 = self.up(x1)
-        x = torch.cat([x4, x3, x2, x1], dim=1)
-        x = self.conv(x)
-        return x
-
-
-class outconv(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(outconv, self).__init__()
-        #self.upsample = nn.Upsample(scale_factor=4)
-        self.conv = nn.Conv2d(in_ch, out_ch, 1)
+            self.down = Sequential()
 
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        conv = self.conv(x)
+        pool = self.down(conv)
+        return conv, pool
 
 
-class double_conv(nn.Module):
-    '''(conv-BN-ReLU)X2 :   in_ch  , in_ch , out_ch    '''
-    def __init__(self, in_ch, out_ch):
-        super(double_conv, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, in_ch, 3, padding=2, dilation=2),
-            nn.BatchNorm2d(in_ch),
-            nn.ReLU(inplace=True),  # True means cover the origin input
-            nn.Conv2d(in_ch, out_ch, 3, padding=3, dilation=3),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True))
+class Encode(Module):
+    def __init__(self):
+        super(Encode, self).__init__()
+        self.down1 = DownBlock(3, 64)
+        self.down2 = DownBlock(64, 128)
+        self.down3 = DownBlock(128, 256)
+        self.down4 = DownBlock(256, 512)
+        self.down5 = DownBlock(512, 1024, stride=1)
 
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        a, x = self.down1(x)
+        b, x = self.down2(x)
+        c, x = self.down3(x)
+        d, x = self.down4(x)
+        _, x = self.down5(x)
+        return [a, b, c, d], x
 
 
-class double_conv_in(nn.Module):
-    '''(conv-BN-ReLU)X2 :   in_ch  , in_ch , out_ch    '''
-    def __init__(self, in_ch, out_ch):
-        super(double_conv_in, self).__init__()
-        self.conv = nn.Sequential(
-            nn.Conv2d(in_ch, in_ch, 5, padding=2),
-            nn.BatchNorm2d(in_ch),
-            nn.ReLU(inplace=True),  # True means cover the origin input
-            nn.Conv2d(in_ch, out_ch, 3, padding=1, stride=2),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-        )
+class UpBlock(Module):
+    def __init__(self, in_channel, out_channel, last=False):
+        super(UpBlock, self).__init__()
+        self.conv = Sequential(ConvBlock(in_channel, out_channel),
+                               ConvBlock(out_channel, out_channel))
+        self.proj = ConvBlock(in_channel, out_channel)
+
+    def forward(self, x, short):
+        x = self.proj(x)
+        cat = torch.cat([short, x], dim=1)
+        return self.conv(cat)
+
+
+class UnetPlus(Module):
+    def __init__(self, n_class):
+        super(UnetPlus, self).__init__()
+        self.encode = Encode()
+        self.u31 = UpBlock(1024, 512)
+
+        self.c20_21 = ConvBlock(256, 256)
+        self.u21 = UpBlock(512, 256)
+        self.c21_22 = ConvBlock(256, 256)
+        self.c20_22 = ConvBlock(256, 256)
+
+        self.u22 = UpBlock(512, 256)
+
+        self.c10_11 = ConvBlock(128, 128)
+        self.u11 = UpBlock(256, 128)
+        self.c10_12 = ConvBlock(128, 128)
+        self.c10_13 = ConvBlock(128, 128)
+        self.c11_12 = ConvBlock(128, 128)
+        self.u12 = UpBlock(256, 128)
+        self.c11_13 = ConvBlock(128, 128)
+        self.c12_13 = ConvBlock(128, 128)
+        self.u13 = UpBlock(256, 128)
+
+        self.c00_01 = ConvBlock(64, 64)
+        self.u01 = UpBlock(128, 64)
+        self.c00_02 = ConvBlock(64, 64)
+        self.c00_03 = ConvBlock(64, 64)
+        self.c00_04 = ConvBlock(64, 64)
+        self.c01_02 = ConvBlock(64, 64)
+        self.c01_03 = ConvBlock(64, 64)
+        self.c01_04 = ConvBlock(64, 64)
+        self.u02 = UpBlock(128, 64)
+        self.c02_03 = ConvBlock(64, 64)
+        self.c02_04 = ConvBlock(64, 64)
+        self.u03 = UpBlock(128, 64)
+        self.c03_04 = ConvBlock(64, 64)
+        self.u04 = UpBlock(128, 64, last=True)
+        self.deepsuper1 = ConvBlock(64, n_class, k=1, p=0)
+        self.deepsuper2 = ConvBlock(64, n_class, k=1, p=0)
+        self.deepsuper3 = ConvBlock(64, n_class, k=1, p=0)
+        self.deepsuper4 = ConvBlock(64, n_class, k=1, p=0)
+        self.classifer = Conv2d(32, n_class, 1)
 
     def forward(self, x):
-        x = self.conv(x)
-        return x
+        h, w = x.size()[2:]
+        [x00, x10, x20, x30], x40 = self.encode(x)
+        x40 = F.interpolate(x40,
+                            x30.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
 
+        x31 = self.u31(x40, x30)
+        x30 = F.interpolate(x30,
+                            x20.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
+        x21 = self.u21(x30, self.c20_21(x20))
+        x31 = F.interpolate(x31,
+                            x30.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
+        x22 = self.u22(x31, self.c21_22(x21) + self.c20_22(x20))
 
-class inconv(nn.Module):
-    def __init__(self, in_ch, out_ch):
-        super(inconv, self).__init__()
-        self.conv = double_conv_in(in_ch, out_ch)
+        x20 = F.interpolate(x20,
+                            x10.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
+        x11 = self.u11(x20, self.c10_11(x10))
+        x21 = F.interpolate(x21,
+                            x10.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
+        x12 = self.u12(x21, self.c11_12(x11)) + self.c10_12(x10)
+        x22 = F.interpolate(x22,
+                            x20.size()[2:],
+                            mode='bilinear',
+                            align_corners=True)
+        x13 = self.u13(x22,
+                       self.c12_13(x12) + self.c11_13(x11) + self.c10_13(x10))
+        x10 = F.interpolate(x10, (h, w), mode='bilinear', align_corners=True)
+        x01 = self.u01(x10, self.c00_01(x00))
+        x11 = F.interpolate(x11, (h, w), mode='bilinear', align_corners=True)
+        x02 = self.u02(x11, self.c01_02(x01) + self.c00_02(x00))
+        x12 = F.interpolate(x12, (h, w), mode='bilinear', align_corners=True)
+        x03 = self.u03(x12,
+                       self.c02_03(x02) + self.c01_03(x01) + self.c00_03(x00))
+        x13 = F.interpolate(x13, (h, w), align_corners=True, mode='bilinear')
+        x04 = self.u04(
+            x13,
+            self.c03_04(x03) + self.c02_04(x02) + self.c01_04(x01) +
+            self.c00_04(x00))
+        deepsuper = torch.cat([
+            self.deepsuper1(x01),
+            self.deepsuper2(x02),
+            self.deepsuper3(x03),
+            self.deepsuper4(x04)
+        ],
+                              dim=1)
+        return self.classifer(deepsuper)
 
-    def forward(self, x):
-        x = self.conv(x)
-        return x
-
-
-cc = 16  # you can change it to 8, then the model can be more faster ,reaching 35 fps on cpu when testing
-
-
-class Unet_2D(nn.Module):
-    def __init__(self, n_classes, n_channels=3, mode='train'):
-        super(Unet_2D, self).__init__()
-        self.inconv = inconv(n_channels, cc)
-        self.down1 = down(cc, 2 * cc)
-        self.down2 = down(2 * cc, 4 * cc)
-        self.down3 = down(4 * cc, 8 * cc)
-        self.up1 = up(12 * cc, 4 * cc)
-        self.up20 = up(6 * cc, 2 * cc)
-        self.up2 = up3(8 * cc, 2 * cc)
-        self.up30 = up(3 * cc, cc)
-        self.up31 = up3(4 * cc, cc)
-        self.up3 = up4(5 * cc, cc)
-        self.outconv = outconv(cc, n_classes)
-        self.mode = mode
-
-    def forward(self, x):
-        #if self.mode == 'train':  # use the whole model when training
-        h,w = x.size()[2:]
-        x1 = self.inconv(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x = self.up1(x4, x3)
-        x21 = self.up20(x3, x2)
-        x = self.up2(x, x21, x2)
-        x11 = self.up30(x2, x1)
-        x12 = self.up31(x21, x11, x1)
-        x = self.up3(x, x12, x11, x1)
-        #output 0 1 2
-        x = F.interpolate(x,(h,w),mode='bilinear',align_corners=True)
-        y2 = self.outconv(x)
-        #y0 = self.outconv(x11)
-        #y1 = self.outconv(x12)
-        return  y2
-        # else:  # prune the model when testing
-        #     x1 = self.inconv(x)
-        #     x2 = self.down1(x1)
-        #     x11 = self.up30(x2, x1)
-        #     # output 0
-        #     y0 = self.outconv(x11)
-        #     return y0
 
 if __name__ == "__main__":
-    data = torch.rand(1,3,255,846)
-    net= Unet_2D(8)
-    rtn =net(data)
+    import torch
+    SIZE1 = [[846, 255], 2, 15]
+    SIZE2 = [[1128, 340], 2, 10]
+    SIZE3 = [[1692, 510], 1, 15]
+    data = torch.rand((1, 3, 846, 255))
+    net = UnetPlus(8)
+    rtn = net(data)
     print(rtn.shape)
