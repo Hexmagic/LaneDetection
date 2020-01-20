@@ -28,7 +28,7 @@ from util.metric import compute_iou
 
 
 class Trainer(object):
-    def __init__(self, gpu, optim='adam', memory=MEMORY, model='deeplab'):
+    def __init__(self, gpu, optim, memory=MEMORY, model='deeplab'):
         self.model = model
         self.optim = optim
         self.gpu = gpu
@@ -274,9 +274,15 @@ def main():
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', type=str, help='输入GPU的ID,或者以逗号分隔的ID列表')
-    parser.add_argument('--model', type=str, help='模型名称，deeplab或者unet++')
+    parser.add_argument('--model',
+                        type=str,
+                        help='模型名称，deeplab或者unet++',
+                        default='deeplab')
     parser.add_argument('--stage', type=int, help='训练阶段，默认为1', default=1)
-    parser.add_argument('--optim', type=str, help='优化器，Adam或者SGD')
+    parser.add_argument('--optim',
+                        type=str,
+                        help='优化器，Adam或者SGD',
+                        default='adam')
     args = parser.parse_args()
 
     model = args.model
