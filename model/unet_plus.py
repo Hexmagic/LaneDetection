@@ -553,10 +553,9 @@ class NestedUNet(nn.Module):
     Implementation of this paper:
     https://arxiv.org/pdf/1807.10165.pdf
     """
-    def __init__(self, in_ch=3, out_ch=1):
+    def __init__(self,n_class=8,n1=16):
         super(NestedUNet, self).__init__()
-
-        n1 = 64
+        in_ch = 3
         filters = [n1, n1 * 2, n1 * 4, n1 * 8, n1 * 16]
 
         self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
