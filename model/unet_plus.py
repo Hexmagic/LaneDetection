@@ -593,7 +593,7 @@ class NestedUNet(nn.Module):
         self.conv0_4 = conv_block_nested(filters[0] * 4 + filters[1],
                                          filters[0], filters[0])
 
-        self.final = nn.Conv2d(filters[0], out_ch, kernel_size=1)
+        self.final = nn.Conv2d(filters[0], n_class, kernel_size=1)
 
     def up(self, ipt, dst):
         h, w = dst.size()[2:]
