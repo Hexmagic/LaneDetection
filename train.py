@@ -261,7 +261,7 @@ class Trainer(object):
                                         nesterov=True)
             adjust_lr = self.adjust_lr_sgd
         else:
-            optimizer = torch.optim.AdamW(net.parameters())
+            optimizer = torch.optim.Adam(net.parameters(),weight_decay=0.02,amsgrad=True)
             adjust_lr = self.adjust_lr_adam
 
         last_MIOU = 0.0
