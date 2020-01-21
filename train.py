@@ -33,6 +33,7 @@ class Trainer(object):
         self.optim = optim
         self.gpu = gpu
         self.loss = loss
+        self.ids = self.bootstrap(memory)
         if loss == 'bce+dice':
             self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
             self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
@@ -44,7 +45,7 @@ class Trainer(object):
         self.trainF = open(os.path.join(LOGPATH, f'{self.model}_train.txt'),
                            'w')
         self.testF = open(os.path.join(LOGPATH, f'{self.model}_test.txt'), 'w')
-        self.ids = self.bootstrap(memory)
+        
 
     def bootstrap(self, memory):
         '''
