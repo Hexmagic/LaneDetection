@@ -7,9 +7,8 @@ import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
 import json
-from config import RoadList
+from setting import RoadList, DATAROOT, CSV_PATH
 from sklearn.model_selection import train_test_split
-from config import DATAROOT,CSV_PATH
 
 
 class LaneDataFactory(object):
