@@ -25,7 +25,7 @@ class SparableConv(Module):
         ]
         layers.append(Conv2d(in_channel, out_channel, kernel_size=1))
         if relu:
-            layers += [BatchNorm2d(out_channel), ReLU(True)]
+            layers += [BatchNorm2d(out_channel), LeakyReLU(True)]
         self.net = Sequential(*layers)
 
     def forward(self, x):
@@ -36,7 +36,7 @@ class ConvBlock(Module):
     def __init__(self, in_channel, out_channel):
         super(ConvBlock, self).__init__()
         self.net = Sequential(
-            BatchNorm2d(in_channel), ReLU(True),
+            BatchNorm2d(in_channel), LeakyReLU(True),
             Conv2d(in_channel, out_channel, kernel_size=3, padding=1))
 
     def forward(self, x):
@@ -132,7 +132,7 @@ class Encoder(Module):
 class Unet(Module):
     def __init__(self, n_class=8):
         super(Unet, self).__init__()
-        self.classifer = Sequential(BatchNorm2d(64), ReLU(True),
+        self.classifer = Sequential(BatchNorm2d(64), LeakyReLU(True),
                                     Conv2d(64, n_class, 1))
         self.encoder = ResNet(depth=50,
                               base_width=4,

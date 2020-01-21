@@ -49,7 +49,7 @@ class BottleBlock(Module):
 		[first, second, third] = channels
 		layers = [
 			ConvBlock(first, second, 1, norm=norm, padding=0),
-			ReLU(),
+			LeakyReLU(),
 			ConvBlock(second,
 					  second,
 					  3,
@@ -57,7 +57,7 @@ class BottleBlock(Module):
 					  stride=stride,
 					  norm=norm,
 					  dilation=dilation),
-			ReLU(),
+			LeakyReLU(),
 			ConvBlock(second, third, 1, norm=norm, padding=0),
 		]
 		self.net = Sequential(*layers)
@@ -74,7 +74,7 @@ class BottleBlock(Module):
 		I = X
 		if self.downsample:
 			I = self.downsample(X)
-		X = ReLU(True)(self.net(X) + I)
+		X = LeakyReLU(True)(self.net(X) + I)
 		return X
 
 
@@ -88,7 +88,7 @@ class BasicBlock(Module):
 		[first, second, third] = channels
 		layers = [
 			ConvBlock(first, second, 3, padding=1, norm=norm),
-			ReLU(),
+			LeakyReLU(),
 			ConvBlock(second,
 					  third,
 					  3,
@@ -108,7 +108,7 @@ class BasicBlock(Module):
 		I = X
 		if self.transform:
 			I = self.transform(X)
-		return ReLU(True)(I + self.net(X))
+		return LeakyReLU(True)(I + self.net(X))
 
 
 class ResNet(Module):
@@ -143,7 +143,7 @@ class ResNet(Module):
 		self.width = base_width
 		self.group = group
 		# begin layers
-		self.pre = Sequential(Conv2d(3, 64, 7, stride=2, padding=3), ReLU(),
+		self.pre = Sequential(Conv2d(3, 64, 7, stride=2, padding=3), LeakyReLU(),
 							  BatchNorm2d(64),
 							  MaxPool2d(3, 2, 1))  # 输出大小56x56
 

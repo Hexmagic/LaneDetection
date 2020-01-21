@@ -20,14 +20,14 @@ class conv_block(nn.Module):
                       stride=1,
                       padding=1,
                       bias=True), nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
+            nn.LeakyReLU(inplace=True),
             nn.Conv2d(out_ch,
                       out_ch,
                       kernel_size=3,
                       stride=1,
                       padding=1,
                       bias=True), nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True))
+            nn.LeakyReLU(inplace=True))
 
     def forward(self, x):
 
@@ -49,7 +49,7 @@ class up_conv(nn.Module):
                       stride=1,
                       padding=1,
                       bias=True), nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True))
+            nn.LeakyReLU(inplace=True))
 
     def forward(self, x):
         x = self.up(x)
@@ -76,7 +76,7 @@ class conv_block_nested(nn.Module):
                       dilation=dilation,
                       bias=False),
             nn.BatchNorm2d(mid_channel),
-            nn.ReLU(True),
+            nn.LeakyReLU(True),
             nn.Conv2d(mid_channel,
                       out_channel,
                       kernel_size=3,
@@ -86,7 +86,7 @@ class conv_block_nested(nn.Module):
                       dilation=dilation,
                       bias=False),
             nn.BatchNorm2d(out_channel),
-            nn.ReLU(True),
+            nn.LeakyReLU(True),
         ]
 
         self.net = nn.Sequential(*layers)
@@ -150,6 +150,10 @@ class NestedUNet(nn.Module):
         self.super3 = nn.Conv2d(filters[0], n_class, kernel_size=1)
         self.super4 = nn.Conv2d(filters[0], n_class, kernel_size=1)
         self.final = nn.Conv2d(n_class * 4, n_class, kernel_size=1)
+        for layer in self.modules():
+            if isinstance(layer, torch.nn.Conv2d):
+                torch.nn.init.kaiming_normal_(layer.weight,
+                                              mode='fan_out')
 
     def up(self, ipt, dst):
         h, w = dst.size()[2:]
