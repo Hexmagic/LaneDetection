@@ -1,6 +1,6 @@
 import sys
 import os
-RoadList = ['Image_Data/Road02', 'Image_Data/Road03', 'Image_Data/Road04']
+RoadList = ['Image_Data/Road02', 'Image_Data/Road04']
 MEMORY = 6
 CSV_PATH = 'data_list'
 if not os.path.exists(CSV_PATH):
