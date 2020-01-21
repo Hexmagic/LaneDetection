@@ -27,8 +27,9 @@ from util.metric import compute_iou
 
 
 class Trainer(object):
-    def __init__(self, gpu, loss, optim, memory=MEMORY, model='deeplab'):
+    def __init__(self, gpu, lr, loss, optim, memory=MEMORY, model='deeplab'):
         self.model = model
+        self.lr = lr
         self.optim = optim
         self.gpu = gpu
         self.loss = loss
@@ -63,19 +64,17 @@ class Trainer(object):
         根据epoch衰减学习率
         '''
         if epoch == 0:
-            lr = 5e-4
+            lr = self.lr
         elif epoch == 2:
-            lr = 6e-4
+            lr = self.lr*0.9
         elif epoch == 5:
-            lr = 5e-4
+            lr = self.lr*0.7
         elif epoch == 8:
-            lr = 4e-4
+            lr = self.lr*0.4
         elif epoch == 13:
-            lr = 3e-4
+            lr = self.lr*0.5
         elif epoch == 18:
-            lr = 2e-4
-        elif epoch == 22:
-            lr = 3e-4
+            lr = self.lr*0.6
         else:
             return
         for param_group in optimizer.param_groups:
