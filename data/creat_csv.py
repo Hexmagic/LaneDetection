@@ -52,9 +52,9 @@ class LaneDataFactory(object):
         road = path.split('/')[-1]
         pt = Path(os.path.join(self.root, path))
         if sys.platform == 'win32':
-            glob = '*/*/*/*/*.jpg'
+            glob = './*/*/*/*/*.jpg'
         else:
-            glob = '*/*/*.jpg'
+            glob = './*/*/*.jpg'
         for ele in pt.glob(glob):
             imgName = ele.name
             labelParent = str(ele.parent).replace(
