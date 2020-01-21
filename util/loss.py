@@ -41,7 +41,7 @@ def one_hot(index, classes):
 
 
 class FocalLoss(nn.Module):
-    def __init__(self, gamma=0, eps=1e-7):
+    def __init__(self, gamma=2, eps=1e-7):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.eps = eps

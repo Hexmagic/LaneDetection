@@ -27,10 +27,17 @@ from util.metric import compute_iou
 
 
 class Trainer(object):
-    def __init__(self, gpu, optim, memory=MEMORY, model='deeplab'):
+    def __init__(self, gpu, loss, optim, memory=MEMORY, model='deeplab'):
         self.model = model
         self.optim = optim
         self.gpu = gpu
+        self.loss = loss
+        if loss == 'bce+dice':
+            self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
+            self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
+        else:
+            self.loss_func1 = FocalLoss().cuda(device=self.ids[0])
+            self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
         self.trainF = open(os.path.join(LOGPATH, f'{self.model}_train.txt'),
@@ -56,7 +63,7 @@ class Trainer(object):
         根据epoch衰减学习率
         '''
         if epoch == 0:
-            lr = 8e-4
+            lr = 5e-4
         elif epoch == 2:
             lr = 6e-4
         elif epoch == 5:
@@ -79,7 +86,7 @@ class Trainer(object):
         根据epoch衰减学习率
         '''
         if epoch == 0:
-            lr = 1e-2
+            lr = 5e-3
         elif epoch == 2:
             lr = 5e-3
         elif epoch == 5:
@@ -128,9 +135,7 @@ class Trainer(object):
         total_mask_loss = []
         dataprocess = tqdm(dataLoader, dynamic_ncols=True)
         i = 0
-        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
-        loss_func2 = DiceLoss().cuda(device=self.ids[0])
-        #loss_func3 = FocalLoss().cuda(device=self.ids[0])
+
         dataprocess.set_description_str("epoch:{}".format(epoch))
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
@@ -143,13 +148,17 @@ class Trainer(object):
             optimizer.zero_grad()
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = loss_func1(out, mask) + loss_func2(
-                sig, mask)  #+ loss_func3(out, mask)
+            if self.loss == 'bce+dice':
+                mask_loss = self.loss_func1(out, mask) + self.loss_func2(
+                    sig, mask)  #+ loss_func3(out, mask)
+            else:
+                mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
+                    sig, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             if i % 50 == 0:
                 dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-                np.mean(total_mask_loss)))
+                    np.mean(total_mask_loss)))
                 if self.visdom:
                     self.visual(image, sig, mask, total_mask_loss)
 
@@ -184,8 +193,6 @@ class Trainer(object):
             "TA": {i: 0
                    for i in range(8)}
         }
-        loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
-        loss_func2 = DiceLoss().cuda(device=self.ids[0])
         #loss_func3 = FocalLoss().cuda(device=self.ids[0])
         for batch_item in dataprocess:
             image, mask, _ = batch_item
@@ -195,8 +202,14 @@ class Trainer(object):
                         device=self.ids[0])
             out = net(image)
             sig = torch.sigmoid(out)
-            mask_loss = loss_func1(out, mask) + loss_func2(
-                sig, mask)  #+ loss_func3(out, mask)
+            if self.loss == 'bce+dice':
+                mask_loss = self.loss_func1(out, mask) + self.loss_func2(
+                    sig, mask)  #+ loss_func3(out, mask)
+            else:
+                mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
+                    sig, mask)
+            #mask_loss = loss_func1(out, mask) + loss_func2(
+            #sig, mask)  #+ loss_func3(out, mask)
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
@@ -225,7 +238,7 @@ class Trainer(object):
                 net = DeeplabV3Plus(n_class=8).cuda(device=self.ids[0])
             elif self.model == 'unet++':
                 print("Model Unet++")
-                net = NestedUNet(8,n1=16).cuda(device=self.ids[0])
+                net = NestedUNet(8, n1=16).cuda(device=self.ids[0])
             else:
                 print("MOdeul Unet")
                 net = Unet(n_class=8).cuda(device=self.ids[0])
@@ -282,6 +295,11 @@ def main():
                         type=str,
                         help='优化器，Adam或者SGD',
                         default='adam')
+    parser.add_argument('--lr', type=float, help='基础学习率，默认6e-4', default=6e-4)
+    parser.add_argument('--loss',
+                        type=str,
+                        help="损失函数选择，例如bce+dice或者dice+focal,默认bce+dice",
+                        default='bce+dice')
     args = parser.parse_args()
 
     model = args.model
@@ -295,7 +313,9 @@ def main():
         trainer = Trainer(memory=6 if batch == 2 else 9,
                           model=model,
                           optim=args.optim,
-                          gpu=args.gpu)
+                          lr=args.lr,
+                          gpu=args.gpu,
+                          loss=args.loss)
         trainer.run(batch, shape, epoch)
 
 
