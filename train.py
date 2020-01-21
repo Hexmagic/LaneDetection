@@ -149,7 +149,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = self.loss_func1(out, mask) + self.loss_func2(
+                mask_loss = 0.7*self.loss_func1(out, mask) + 0.3*self.loss_func2(
                     sig, mask)  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
@@ -203,7 +203,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = self.loss_func1(out, mask) + self.loss_func2(
+                mask_loss = 0.7*self.loss_func1(out, mask) + 0.3*self.loss_func2(
                     sig, mask)  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
