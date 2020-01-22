@@ -45,7 +45,6 @@ class Trainer(object):
         self.trainF = open(os.path.join(LOGPATH, f'{self.model}_train.txt'),
                            'w')
         self.testF = open(os.path.join(LOGPATH, f'{self.model}_test.txt'), 'w')
-        
 
     def bootstrap(self, memory):
         '''
@@ -67,15 +66,15 @@ class Trainer(object):
         if epoch == 0:
             lr = self.lr
         elif epoch == 2:
-            lr = self.lr*0.9
+            lr = self.lr * 0.9
         elif epoch == 5:
-            lr = self.lr*0.7
+            lr = self.lr * 0.7
         elif epoch == 8:
-            lr = self.lr*0.4
+            lr = self.lr * 0.4
         elif epoch == 13:
-            lr = self.lr*0.5
+            lr = self.lr * 0.5
         elif epoch == 18:
-            lr = self.lr*0.6
+            lr = self.lr * 0.6
         else:
             return
         for param_group in optimizer.param_groups:
@@ -149,8 +148,9 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = 0.7*self.loss_func1(out, mask) + 0.3*self.loss_func2(
-                    sig, mask)  #+ loss_func3(out, mask)
+                mask_loss = 0.7 * self.loss_func1(
+                    out, mask) + 0.3 * self.loss_func2(
+                        sig, mask)  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
                     sig, mask)
@@ -203,8 +203,9 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = 0.7*self.loss_func1(out, mask) + 0.3*self.loss_func2(
-                    sig, mask)  #+ loss_func3(out, mask)
+                mask_loss = 0.7 * self.loss_func1(
+                    out, mask) + 0.3 * self.loss_func2(
+                        sig, mask)  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
                     sig, mask)
@@ -260,10 +261,12 @@ class Trainer(object):
                                         weight_decay=0.01,
                                         nesterov=True)
             adjust_lr = self.adjust_lr_sgd
-        else:
-            optimizer = torch.optim.AdamW(net.parameters(),weight_decay=0.002)
+        elif self.optim.lower() == 'adam':
+            optimizer = torch.optim.AdamW(net.parameters(), weight_decay=0.002)
             adjust_lr = self.adjust_lr_adam
-
+        else:
+            optimizer = torch.optim.RMSprop(net.parameters(), momentum=0.9)
+            adjust_lr = self.adjust_lr_adam
         last_MIOU = 0.0
 
         for epoch in range(epochs):
@@ -293,7 +296,7 @@ def main():
     parser.add_argument('--stage', type=int, help='训练阶段，默认为1', default=1)
     parser.add_argument('--optim',
                         type=str,
-                        help='优化器，Adam或者SGD',
+                        help='优化器，Adam或者SGD RMSPROP',
                         default='adam')
     parser.add_argument('--lr', type=float, help='基础学习率，默认6e-4', default=6e-4)
     parser.add_argument('--loss',
