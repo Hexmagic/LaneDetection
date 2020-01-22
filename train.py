@@ -156,7 +156,7 @@ class Trainer(object):
                     sig, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
-            if i % 20 == 0:
+            if i % 5 == 0:
                 dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
                     np.mean(total_mask_loss)))
                 if self.visdom:
