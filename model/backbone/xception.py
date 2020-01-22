@@ -176,8 +176,8 @@ class AlignedXception(nn.Module):
         self._init_weight()
 
         # Load pretrained model
-        if pretrained:
-            self._load_pretrained_model()
+        # if pretrained:
+        #     self._load_pretrained_model()
 
     def forward(self, x):
         # Entry flow
