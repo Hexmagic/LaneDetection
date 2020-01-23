@@ -14,7 +14,7 @@ from torchvision import transforms
 from tqdm import tqdm
 from visdom import Visdom
 
-#from model.deeplabv3_plus import DeeplabV3Plus
+from model.deeplabv3_plus import DeeplabV3Plus
 from model.deeplab import DeepLab
 from model.unet import Unet
 from model.unet_plus import NestedUNet
@@ -237,8 +237,7 @@ class Trainer(object):
             print("train from scratch")
             if self.model == 'deeplab':
                 print("Model Deeplab")
-                net = DeepLab(backbone='xception',
-                              num_classes=8).cuda(device=self.ids[0])
+                net = DeeplabV3Plus(8).cuda(device=self.ids[0])
             elif self.model == 'unet++':
                 print("Model Unet++")
                 net = NestedUNet(8, n1=16).cuda(device=self.ids[0])
