@@ -1,206 +1,258 @@
-from __future__ import division, print_function
-
+##########################################
+# @subject : Unet++ implementation       #
+# @author  : perryxin                    #
+# @date    : 2018.12.27                  #
+##########################################
+## pytorch implementation of unet++ , just use its main idea, the model is not the same as the origin unet++ mentioned in paper
+## paper : UNet++: A Nested U-Net Architecture for Medical Image Segmentation
+## https://arxiv.org/abs/1807.10165
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.utils.data
 
 
-class conv_block(nn.Module):
-    """
-    Convolution Block 
-    """
+class double_conv2(nn.Module):
+    '''(conv-BN-ReLU)X2 :   in_ch  , out_ch , out_ch    '''
     def __init__(self, in_ch, out_ch):
-        super(conv_block, self).__init__()
-
+        super(double_conv2, self).__init__()
         self.conv = nn.Sequential(
-            nn.Conv2d(in_ch,
-                      out_ch,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True), nn.BatchNorm2d(out_ch),
-            nn.LeakyReLU(inplace=True),
-            nn.Conv2d(out_ch,
-                      out_ch,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True), nn.BatchNorm2d(out_ch),
-            nn.LeakyReLU(inplace=True))
+            nn.Conv2d(in_ch, out_ch, 3, padding=2, dilation=2),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),  # True means cover the origin input
+            nn.Conv2d(out_ch, out_ch, 3, padding=3, dilation=3),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True))
 
     def forward(self, x):
-
         x = self.conv(x)
         return x
 
 
-class up_conv(nn.Module):
-    """
-    Up Convolution Block
-    """
+class down(nn.Module):
     def __init__(self, in_ch, out_ch):
-        super(up_conv, self).__init__()
-        self.up = nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(in_ch,
-                      out_ch,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True), nn.BatchNorm2d(out_ch),
-            nn.LeakyReLU(inplace=True))
+        super(down, self).__init__()
+        self.mpconv = nn.Sequential(nn.MaxPool2d(2),
+                                    double_conv(in_ch, out_ch))
 
     def forward(self, x):
-        x = self.up(x)
+        x = self.mpconv(x)
         return x
 
 
-class conv_block_nested(nn.Module):
-    def __init__(self,
-                 in_channel,
-                 mid_channel,
-                 out_channel,
-                 relu=True,
-                 stride=1,
-                 padding=1,
-                 dilation=1):
-        super(conv_block_nested, self).__init__()
-        layers = [
-            nn.Conv2d(in_channel,
-                      mid_channel,
-                      kernel_size=3,
-                      padding=dilation,
-                      groups=1,
-                      stride=stride,
-                      dilation=dilation,
-                      bias=False),
-            nn.BatchNorm2d(mid_channel),
-            nn.LeakyReLU(True),
-            nn.Conv2d(mid_channel,
-                      out_channel,
-                      kernel_size=3,
-                      padding=dilation,
-                      groups=1,
-                      stride=stride,
-                      dilation=dilation,
-                      bias=False),
-            nn.BatchNorm2d(out_channel),
-            nn.LeakyReLU(True),
-        ]
+class up(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(up, self).__init__()
+        if 0:
+            self.up = nn.Sequential(
+                nn.ConvTranspose3d(in_ch * 2 // 3,
+                                   in_ch * 2 // 3,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0),
+                nn.BatchNorm3d(in_ch * 2 // 3),
+                nn.ReLU(inplace=True),
+            )
+        else:
+            self.up = nn.Upsample(scale_factor=2)
+        self.conv = double_conv2(in_ch, out_ch)
 
-        self.net = nn.Sequential(*layers)
+    def forward(self, x1, x2):  # x1--up , x2 ---down
+        x1 = self.up(x1)
+        diffX = x1.size()[2] - x2.size()[2]
+        diffY = x2.size()[3] - x1.size()[3]
+        x1 = F.pad(x1, (
+            diffY // 2,
+            diffY - diffY // 2,
+            diffX // 2,
+            diffX - diffX // 2,
+        ))
+        x = torch.cat([x2, x1], dim=1)
+        x = self.conv(x)
+        return x
+
+
+class up3(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(up3, self).__init__()
+        if 0:
+            self.up = nn.Sequential(
+                nn.ConvTranspose3d(in_ch * 2 // 3,
+                                   in_ch * 2 // 3,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0),
+                nn.BatchNorm3d(in_ch * 2 // 3),
+                nn.ReLU(inplace=True),
+            )
+        else:
+            self.up = nn.Upsample(scale_factor=2)
+        self.conv = double_conv2(in_ch, out_ch)
+
+    def forward(self, x1, x2, x3):
+        # print(x1.shape)
+        x1 = self.up(x1)
+        x = torch.cat([x3, x2, x1], dim=1)
+        x = self.conv(x)
+        return x
+
+
+class up4(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(up4, self).__init__()
+        if 0:
+            self.up = nn.Sequential(
+                nn.ConvTranspose3d(in_ch * 2 // 3,
+                                   in_ch * 2 // 3,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0),
+                nn.BatchNorm3d(in_ch * 2 // 3),
+                nn.ReLU(inplace=True),
+            )
+        else:
+            self.up = nn.Upsample(scale_factor=2)
+        self.conv = double_conv2(in_ch, out_ch)
+
+    def forward(self, x1, x2, x3, x4):  # x1--up , x2 ---down
+        # print(x1.shape)
+        x1 = self.up(x1)
+        x = torch.cat([x4, x3, x2, x1], dim=1)
+        x = self.conv(x)
+        return x
+
+
+class up5(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(up5, self).__init__()
+        if 0:
+            self.up = nn.Sequential(
+                nn.ConvTranspose3d(in_ch * 2 // 3,
+                                   in_ch * 2 // 3,
+                                   kernel_size=2,
+                                   stride=2,
+                                   padding=0),
+                nn.BatchNorm3d(in_ch * 2 // 3),
+                nn.ReLU(inplace=True),
+            )
+        else:
+            self.up = nn.Upsample(scale_factor=2)
+        self.conv = double_conv2(in_ch, out_ch)
+
+    def forward(self, x1, x2, x3, x4, x5):  # x1--up , x2 ---down
+        # print(x1.shape)
+        x1 = self.up(x1)
+        x = torch.cat([x5, x4, x3, x2, x1], dim=1)
+        x = self.conv(x)
+        return x
+
+
+class outconv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(outconv, self).__init__()
+        self.upsample = nn.Upsample(scale_factor=4)
+        self.conv = nn.Conv2d(in_ch, out_ch, 1)
 
     def forward(self, x):
-        return self.net(x)
+        x = self.upsample(x)
+        x = self.conv(x)
+        x = F.sigmoid(x)
+        return x
 
 
-#Nested Unet
-
-
-class NestedUNet(nn.Module):
-    """
-    Implementation of this paper:
-    https://arxiv.org/pdf/1807.10165.pdf
-    """
-    def __init__(self, n_class=8, n1=16):
-        super(NestedUNet, self).__init__()
-        in_ch = 3
-        filters = [n1, n1 * 2, n1 * 4, n1 * 8, n1 * 16]
-        # [16,32,64,128,256]
-        self.pool = nn.MaxPool2d(kernel_size=2, stride=2)
-        self.Up = nn.Upsample(scale_factor=2,
-                              mode='bilinear',
-                              align_corners=True)
-
-        self.conv0_0 = conv_block_nested(in_ch, filters[0], filters[0])
-        self.conv1_0 = conv_block_nested(filters[0], filters[1], filters[1])
-        self.conv2_0 = conv_block_nested(filters[1], filters[2], filters[2])
-        self.conv3_0 = conv_block_nested(filters[2], filters[3], filters[3])
-        self.conv4_0 = conv_block_nested(filters[3],
-                                         filters[4],
-                                         filters[4],
-                                         dilation=2)
-
-        self.conv0_1 = conv_block_nested(filters[0] + filters[1], filters[0],
-                                         filters[0])
-        self.conv1_1 = conv_block_nested(filters[1] + filters[2], filters[1],
-                                         filters[1])
-        self.conv2_1 = conv_block_nested(filters[2] + filters[3], filters[2],
-                                         filters[2])
-        self.conv3_1 = conv_block_nested(filters[3] + filters[4], filters[3],
-                                         filters[3])
-
-        self.conv0_2 = conv_block_nested(filters[0] * 2 + filters[1],
-                                         filters[0], filters[0])
-        self.conv1_2 = conv_block_nested(filters[1] * 2 + filters[2],
-                                         filters[1], filters[1])
-        self.conv2_2 = conv_block_nested(filters[2] * 2 + filters[3],
-                                         filters[2], filters[2])
-
-        self.conv0_3 = conv_block_nested(filters[0] * 3 + filters[1],
-                                         filters[0], filters[0])
-        self.conv1_3 = conv_block_nested(filters[1] * 3 + filters[2],
-                                         filters[1], filters[1])
-
-        self.conv0_4 = conv_block_nested(filters[0] * 4 + filters[1],
-                                         filters[0], filters[0])
-        self.super1 = nn.Conv2d(filters[0], n_class, kernel_size=1)
-        self.super2 = nn.Conv2d(filters[0], n_class, kernel_size=1)
-        self.super3 = nn.Conv2d(filters[0], n_class, kernel_size=1)
-        self.super4 = nn.Conv2d(filters[0], n_class, kernel_size=1)
-        self.final = nn.Conv2d(n_class * 4, n_class, kernel_size=1)
-        for layer in self.modules():
-            if isinstance(layer, torch.nn.Conv2d):
-                torch.nn.init.kaiming_normal_(layer.weight,
-                                              mode='fan_out')
-
-    def up(self, ipt, dst):
-        h, w = dst.size()[2:]
-        return F.interpolate(ipt, (h, w), mode='bilinear', align_corners=True)
+class double_conv(nn.Module):
+    '''(conv-BN-ReLU)X2 :   in_ch  , in_ch , out_ch    '''
+    def __init__(self, in_ch, out_ch):
+        super(double_conv, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_ch, in_ch, 3, padding=2, dilation=2),
+            nn.BatchNorm2d(in_ch),
+            nn.ReLU(inplace=True),  # True means cover the origin input
+            nn.Conv2d(in_ch, out_ch, 3, padding=3, dilation=3),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True))
 
     def forward(self, x):
-
-        x0_0 = self.conv0_0(x)
-        x1_0 = self.conv1_0(self.pool(x0_0))
-        x0_1 = self.conv0_1(torch.cat([x0_0, self.up(x1_0, x0_0)], 1))
-
-        x2_0 = self.conv2_0(self.pool(x1_0))
-        x1_1 = self.conv1_1(torch.cat([x1_0, self.up(x2_0, x1_0)], 1))
-        x0_2 = self.conv0_2(torch.cat([x0_0, x0_1, self.up(x1_1, x0_0)], 1))
-
-        x3_0 = self.conv3_0(self.pool(x2_0))
-        x2_1 = self.conv2_1(torch.cat([x2_0, self.up(x3_0, x2_0)], 1))
-        x1_2 = self.conv1_2(torch.cat([x1_0, x1_1, self.up(x2_1, x1_0)], 1))
-        x0_3 = self.conv0_3(
-            torch.cat([x0_0, x0_1, x0_2, self.up(x1_2, x0_0)], 1))
-
-        x4_0 = self.conv4_0(self.pool(x3_0))
-        x3_1 = self.conv3_1(torch.cat([x3_0, self.up(x4_0, x3_0)], 1))
-        x2_2 = self.conv2_2(torch.cat([x2_0, x2_1, self.up(x3_1, x2_0)], 1))
-        x1_3 = self.conv1_3(
-            torch.cat([x1_0, x1_1, x1_2, self.up(x2_2, x1_0)], 1))
-        x0_4 = self.conv0_4(
-            torch.cat([x0_0, x0_1, x0_2, x0_3,
-                       self.up(x1_3, x0_0)], 1))
-        deep = torch.cat([
-            self.super1(x0_1),
-            self.super2(x0_2),
-            self.super3(x0_3),
-            self.super4(x0_4)
-        ],
-                         dim=1)
-        output = self.final(deep)
-        return output
+        x = self.conv(x)
+        return x
 
 
-#Dictioary Unet
-#if required for getting the filters and model parameters for each step
+class double_conv_in(nn.Module):
+    '''(conv-BN-ReLU)X2 :   in_ch  , in_ch , out_ch    '''
+    def __init__(self, in_ch, out_ch):
+        super(double_conv_in, self).__init__()
+        self.conv = nn.Sequential(
+            nn.Conv2d(in_ch, in_ch, 5, padding=2),
+            nn.BatchNorm2d(in_ch),
+            nn.ReLU(inplace=True),  # True means cover the origin input
+            nn.Conv2d(in_ch, out_ch, 3, padding=1, stride=2),
+            nn.BatchNorm2d(out_ch),
+            nn.ReLU(inplace=True),
+            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
+        )
 
-if __name__ == "__main__":
-    data = torch.rand((1, 3, 255, 243))
-    net = NestedUNet()
-    from thop import profile
-    rnt = profile(net, (data, ))
-    #Ernt = net(data)
-    print(rnt)
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
+
+class inconv(nn.Module):
+    def __init__(self, in_ch, out_ch):
+        super(inconv, self).__init__()
+        self.conv = double_conv_in(in_ch, out_ch)
+
+    def forward(self, x):
+        x = self.conv(x)
+        return x
+
+
+cc = 16  # you can change it to 8, then the model can be more faster ,reaching 35 fps on cpu when testing
+
+
+class Unet(nn.Module):
+    def __init__(self, n_classes):
+        super(Unet, self).__init__()
+        self.inconv = inconv(3, cc)  # 3 16
+        self.down1 = down(cc, 2 * cc)  # 16 32
+        self.down2 = down(2 * cc, 4 * cc)  # 32 64
+        self.down3 = down(4 * cc, 8 * cc)  # 64 128
+        self.down4 = down(8 * cc, 16 * cc)
+        self.up1 = up(24 * cc, 8 * cc)
+        self.up21 = up(12 * cc, 4 * cc)
+        self.up2 = up3(16 * cc, 4 * cc)  #  144 32
+        self.up11 = up(6 * cc, 2 * cc)
+        self.up12 = up3(8 * cc, 2 * cc)
+        self.up3 = up4(10 * cc, 2 * cc)
+        self.up01 = up(3 * cc, cc)  # 48 16
+        self.up02 = up3(4 * cc, cc)  # 64 16
+        self.up03 = up4(5 * cc, cc)  # 80 16
+        self.up04 = up5(6 * cc, cc)
+        self.outconv = outconv(cc, n_classes)
+        self.mode = mode
+
+    def forward(self, x):
+        x00 = self.inconv(x)  #cc
+        x10 = self.down1(x00)  #2
+        x20 = self.down2(x10)  #4
+        x30 = self.down3(x20)  #8
+        x40 = self.down4(x30)
+        x31 = self.up1(x40, x30)  #8
+        x21 = self.up21(x30, x20)  #4
+        x22 = self.up2(x31, x21, x20)
+        x11 = self.up11(x20, x10)  #2
+        x12 = self.up12(x21, x11, x10)  #2cc
+        x13 = self.up3(x22, x12, x11, x10)  # cc+2cc+2cc+2cc
+        x01 = self.up01(x10, x00)  #cc
+        x02 = self.up02(x11, x01, x00)
+        x03 = self.up03(x12, x02, x01, x00)  #2cc,cc,cc,2cc
+        x04 = self.up04(x13, x03, x02, x01, x00)
+        y = self.outconv(x04)
+        return y
+
+
+if __name__ == '__main__':
+    import time
+    import thop
+    x = torch.rand((1, 3, 256, 256))
+    lnet = Unet(3, 1, 'train')
+    rst = thop.profile(lnet, (x, ))
+    print(rst)

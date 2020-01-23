@@ -15,9 +15,7 @@ from tqdm import tqdm
 from visdom import Visdom
 
 from model.deeplabv3_plus import DeeplabV3Plus
-from model.deeplab import DeepLab
-from model.unet import Unet
-from model.unet_plus import NestedUNet
+from model.unet_plus import Unet
 from setting import LOGPATH, MEMORY, MODELNAME, SIZE1, SIZE2, SIZE3
 from data.datagener import (get_test_loader, get_train_loader,
                             get_valid_loader, one_hot)
@@ -240,10 +238,7 @@ class Trainer(object):
                 net = DeeplabV3Plus(8).cuda(device=self.ids[0])
             elif self.model == 'unet++':
                 print("Model Unet++")
-                net = NestedUNet(8, n1=16).cuda(device=self.ids[0])
-            else:
-                print("MOdeul Unet")
-                net = Unet(n_class=8).cuda(device=self.ids[0])
+                net = Unet(8).cuda(device=self.ids[0])
             with open(f'{self.model}_last_gpu.id', 'w') as f:
                 f.write(str(self.ids[0]))
         return net
