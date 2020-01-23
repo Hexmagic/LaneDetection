@@ -227,7 +227,7 @@ class Unet(nn.Module):
         self.up03 = up4(5 * cc, cc)  # 80 16
         self.up04 = up5(6 * cc, cc)
         self.outconv = outconv(cc, n_classes)
-        self.mode = mode
+
 
     def forward(self, x):
         x00 = self.inconv(x)  #cc
