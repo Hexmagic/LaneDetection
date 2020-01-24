@@ -45,7 +45,10 @@ class up(nn.Module):
         self.conv = double_conv2(in_ch, out_ch)
 
     def forward(self, x1, x2):  # x1--up , x2 ---down
-        x1 = nn.functional.interpolate(x1,x2.size()[2:],mode='bilinear',align_corners=True)
+        x1 = nn.functional.interpolate(x1,
+                                       x2.size()[2:],
+                                       mode='bilinear',
+                                       align_corners=True)
         diffX = x1.size()[2] - x2.size()[2]
         diffY = x2.size()[3] - x1.size()[3]
         x1 = F.pad(x1, (
@@ -66,7 +69,10 @@ class up3(nn.Module):
 
     def forward(self, x1, x2, x3):
         # print(x1.shape)
-        x1 = nn.functional.interpolate(x1,x2.size()[2:],mode='bilinear',align_corners=True)
+        x1 = nn.functional.interpolate(x1,
+                                       x2.size()[2:],
+                                       mode='bilinear',
+                                       align_corners=True)
         #x1 = self.up(x1)
         x = torch.cat([x3, x2, x1], dim=1)
         x = self.conv(x)
@@ -80,7 +86,10 @@ class up4(nn.Module):
 
     def forward(self, x1, x2, x3, x4):  # x1--up , x2 ---down
         # print(x1.shape)
-        x1 = nn.functional.interpolate(x1,x2.size()[2:],mode='bilinear',align_corners=True)
+        x1 = nn.functional.interpolate(x1,
+                                       x2.size()[2:],
+                                       mode='bilinear',
+                                       align_corners=True)
         x = torch.cat([x4, x3, x2, x1], dim=1)
         x = self.conv(x)
         return x
@@ -89,23 +98,14 @@ class up4(nn.Module):
 class up5(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(up5, self).__init__()
-        if 0:
-            self.up = nn.Sequential(
-                nn.ConvTranspose3d(in_ch * 2 // 3,
-                                   in_ch * 2 // 3,
-                                   kernel_size=2,
-                                   stride=2,
-                                   padding=0),
-                nn.BatchNorm3d(in_ch * 2 // 3),
-                nn.ReLU(inplace=True),
-            )
-        else:
-            self.up = nn.Upsample(scale_factor=2)
-        self.conv = double_conv2(in_ch, out_ch)
 
     def forward(self, x1, x2, x3, x4, x5):  # x1--up , x2 ---down
         # print(x1.shape)
-        x1 = self.up(x1)
+        x1 = nn.functional.interpolate(x1,
+                                       x2.size()[2:],
+                                       mode='bilinear',
+                                       align_corners=True)
+        #x1 = self.up(x1)
         x = torch.cat([x5, x4, x3, x2, x1], dim=1)
         x = self.conv(x)
         return x
@@ -117,8 +117,11 @@ class outconv(nn.Module):
         #self.upsample = nn.Upsample(scale_factor=4)
         self.conv = nn.Conv2d(in_ch, out_ch, 1)
 
-    def forward(self, x,dst):
-        x =nn.functional.interpolate(x,dst.size()[2:],mode='bilinear',align_corners=True)
+    def forward(self, x, dst):
+        x = nn.functional.interpolate(x,
+                                      dst.size()[2:],
+                                      mode='bilinear',
+                                      align_corners=True)
         x = self.conv(x)
         #x = F.sigmoid(x)
         return x
@@ -193,7 +196,6 @@ class Unet(nn.Module):
         self.up04 = up5(6 * cc, cc)
         self.outconv = outconv(cc, n_classes)
 
-
     def forward(self, x):
         x00 = self.inconv(x)  #cc
         x10 = self.down1(x00)  #2
@@ -210,7 +212,7 @@ class Unet(nn.Module):
         x02 = self.up02(x11, x01, x00)
         x03 = self.up03(x12, x02, x01, x00)  #2cc,cc,cc,2cc
         x04 = self.up04(x13, x03, x02, x01, x00)
-        y = self.outconv(x04,x)
+        y = self.outconv(x04, x)
         return y
 
 
