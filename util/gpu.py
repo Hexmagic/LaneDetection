@@ -8,7 +8,7 @@ import pynvml
 import GPUtil
 
 
-def wait_gpu(need=4, sleep=5):
+def wait_gpu(need, sleep=5):
     '''
     param:
         need: 需要几G的空间，需要自己估算
@@ -28,12 +28,7 @@ def wait_gpu(need=4, sleep=5):
             if free > need:
                 print(f"Find GPU {i} Has Free Memory {free}G")
                 ids.insert(0, i)
-            elif free > 2:
-                gpu = GPUtil.getGPUs()[i]
-                if gpu.load < 0.85:
-                    ids.append(i)
         if ids:
-            ids.sort()
             return ids
         sys.stdout.write('\r')
         sys.stdout.flush()
