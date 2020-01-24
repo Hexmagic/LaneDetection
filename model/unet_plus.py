@@ -120,7 +120,7 @@ class outconv(nn.Module):
     def forward(self, x,dst):
         x =nn.functional.interpolate(x,dst.size()[2:],mode='bilinear',align_corners=True)
         x = self.conv(x)
-        x = F.sigmoid(x)
+        #x = F.sigmoid(x)
         return x
 
 
