@@ -67,7 +67,7 @@ import torch
 def get_train_loader(batch_size=2, size=[846, 255]):
     transform = Compose([
         ToPILImage(),
-        ColorJitter(brightness=0.5, contrast=0.5,hue=0.5),
+        ColorJitter(brightness=0.3, contrast=0.3),
         ToTensor(),
         RandomErasing(scale=(0.02, 0.06), ratio=(0.2, 1)),
         
