@@ -37,8 +37,9 @@ class Trainer(object):
             self.loss_func1 = BCEWithLogitsLoss().cuda(device=self.ids[0])
             self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
         else:
-            self.loss_func1 = FocalLoss().cuda(device=self.ids[0])
             self.loss_func2 = DiceLoss().cuda(device=self.ids[0])
+            self.loss_func1 = FocalLoss().cuda(device=self.ids[0])
+            
         plt = sys.platform
         self.visdom = Visdom() if plt == 'win32' or plt == 'darwin' else None
         self.trainF = open(os.path.join(LOGPATH, f'{self.model}_train.txt'),
@@ -161,15 +162,18 @@ class Trainer(object):
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             else:
-                mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
-                    sig, mask)
+                loss1 = 0.7 * self.loss_func1(sig, mask)
+                bce_loss.append(loss1.item())
+                loss2 = 0.3 * self.loss_func2(sig, mask)
+                dice_loss.append(loss2.item())
+                mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             if i % 5 == 0:
-                dataprocess.set_postfix_str("m:{:.4f},d:{:.4f},b:{:.4f} ".format(
+                dataprocess.set_postfix_str("t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
                 np.mean(total_mask_loss), np.mean(dice_loss),
                 np.mean(bce_loss)))
                 # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
@@ -231,8 +235,11 @@ class Trainer(object):
                 #     out, mask) + 0.3 * self.loss_func2(
                 #         sig, mask)  #+ loss_func3(out, mask)
             else:
-                mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
-                    sig, mask)
+                loss1 = 0.7 * self.loss_func1(sig, mask)
+                bce_loss.append(loss1.item())
+                loss2 = 0.3 * self.loss_func2(sig, mask)
+                dice_loss.append(loss2.item())
+                mask_loss = loss1 + loss2
             #mask_loss = loss_func1(out, mask) + loss_func2(
             #sig, mask)  #+ loss_func3(out, mask)
             total_mask_loss.append(mask_loss.item())
@@ -240,7 +247,7 @@ class Trainer(object):
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
-            dataprocess.set_postfix_str("m:{:.4f},d:{:.4f},b:{:.4f} ".format(
+            dataprocess.set_postfix_str("t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
                 np.mean(total_mask_loss), np.mean(dice_loss),
                 np.mean(bce_loss)))
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
