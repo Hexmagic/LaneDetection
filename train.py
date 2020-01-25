@@ -162,9 +162,9 @@ class Trainer(object):
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             else:
-                loss1 = 0.9* self.loss_func1(sig, mask)
+                loss1 = 0.1* self.loss_func1(sig, mask)
                 bce_loss.append(loss1.item())
-                loss2 = 0.1 * self.loss_func2(sig, mask)
+                loss2 = 0.9 * self.loss_func2(sig, mask)
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             mask_loss.backward()
@@ -174,8 +174,8 @@ class Trainer(object):
             result = compute_iou(pred, mask, result)
             if i % 5 == 0:
                 dataprocess.set_postfix_str("t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
-                np.mean(total_mask_loss), np.mean(dice_loss),
-                np.mean(bce_loss)))
+                np.mean(total_mask_loss), np.mean(bce_loss),
+                np.mean(dice_loss)))
                 # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
                 #     np.mean(total_mask_loss)))
                 if self.visdom:
@@ -235,9 +235,9 @@ class Trainer(object):
                 #     out, mask) + 0.3 * self.loss_func2(
                 #         sig, mask)  #+ loss_func3(out, mask)
             else:
-                loss1 = 0.9 * self.loss_func1(sig, mask)
+                loss1 = 0.1 * self.loss_func1(sig, mask)
                 bce_loss.append(loss1.item())
-                loss2 = 0.1 * self.loss_func2(sig, mask)
+                loss2 = 0.9 * self.loss_func2(sig, mask)
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2
             #mask_loss = loss_func1(out, mask) + loss_func2(
@@ -248,8 +248,8 @@ class Trainer(object):
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
             dataprocess.set_postfix_str("t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
-                np.mean(total_mask_loss), np.mean(dice_loss),
-                np.mean(bce_loss)))
+                np.mean(total_mask_loss), np.mean(bce_loss),
+                np.mean(dice_loss)))
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
