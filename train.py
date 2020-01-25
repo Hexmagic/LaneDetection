@@ -287,7 +287,7 @@ class Trainer(object):
         if self.optim.lower() == 'sgd':
             optimizer = torch.optim.SGD(net.parameters(),
                                         lr=0.01,
-                                        momentum=0.95,
+                                        momentum=0.90,
                                         weight_decay=0.01,
                                         nesterov=True)
             adjust_lr = self.adjust_lr_sgd
