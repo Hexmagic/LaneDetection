@@ -162,9 +162,9 @@ class Trainer(object):
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             else:
-                loss1 = 0.7 * self.loss_func1(sig, mask)
+                loss1 = 0.2 * self.loss_func1(sig, mask)
                 bce_loss.append(loss1.item())
-                loss2 = 0.3 * self.loss_func2(sig, mask)
+                loss2 = 0.8 * self.loss_func2(sig, mask)
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             mask_loss.backward()
@@ -235,9 +235,9 @@ class Trainer(object):
                 #     out, mask) + 0.3 * self.loss_func2(
                 #         sig, mask)  #+ loss_func3(out, mask)
             else:
-                loss1 = 0.7 * self.loss_func1(sig, mask)
+                loss1 = 0.2 * self.loss_func1(sig, mask)
                 bce_loss.append(loss1.item())
-                loss2 = 0.3 * self.loss_func2(sig, mask)
+                loss2 = 0.8 * self.loss_func2(sig, mask)
                 dice_loss.append(loss2.item())
                 mask_loss = loss1 + loss2
             #mask_loss = loss_func1(out, mask) + loss_func2(
