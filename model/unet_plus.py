@@ -98,7 +98,7 @@ class up4(nn.Module):
 class up5(nn.Module):
     def __init__(self, in_ch, out_ch):
         super(up5, self).__init__()
-
+        self.conv = double_conv2(in_ch, out_ch)
     def forward(self, x1, x2, x3, x4, x5):  # x1--up , x2 ---down
         # print(x1.shape)
         x1 = nn.functional.interpolate(x1,
@@ -198,7 +198,7 @@ class Unet(nn.Module):
         self.outconv1 = outconv(cc, n_classes)
         self.outconv2 = outconv(cc, n_classes)
         self.outconv3 = outconv(cc, n_classes)
-        self.outconv = outconv(n_classes * 4, n_classes)
+        self.outconv = nn.Conv2d(n_classes * 4, n_classes,kernel_size=1)
 
     def forward(self, x):
         x00 = self.inconv(x)  #cc
