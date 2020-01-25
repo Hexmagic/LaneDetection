@@ -131,6 +131,8 @@ class Trainer(object):
     def train(self, net, epoch, dataLoader, optimizer):
         net.train()
         total_mask_loss = []
+        bce_loss = []
+        dice_loss = []
         dataprocess = tqdm(dataLoader, dynamic_ncols=True)
         i = 0
 
@@ -153,9 +155,11 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = 0.7 * self.loss_func1(
-                    out, mask) + 0.3 * self.loss_func2(
-                        sig, mask)  #+ loss_func3(out, mask)
+                loss1 = 0.7 * self.loss_func1(out, mask)
+                bce_loss.append(loss1.item())
+                loss2 = 0.3 * self.loss_func2(sig, mask)
+                dice_loss.append(loss2.item())
+                mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
                     sig, mask)
@@ -165,8 +169,11 @@ class Trainer(object):
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             if i % 5 == 0:
-                dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
-                    np.mean(total_mask_loss)))
+                dataprocess.set_postfix_str("m:{:.4f},d:{:.4f},b:{:.4f} ".format(
+                np.mean(total_mask_loss), np.mean(dice_loss),
+                np.mean(bce_loss)))
+                # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
+                #     np.mean(total_mask_loss)))
                 if self.visdom:
                     self.visual(image, sig, mask, total_mask_loss)
 
@@ -196,6 +203,8 @@ class Trainer(object):
     def valid(self, net, epoch, dataLoader):
         net.eval()
         total_mask_loss = []
+        bce_loss = []
+        dice_loss = []
         dataprocess = tqdm(dataLoader, dynamic_ncols=True)
         result = {
             "TP": {i: 0
@@ -213,9 +222,14 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
             if self.loss == 'bce+dice':
-                mask_loss = 0.7 * self.loss_func1(
-                    out, mask) + 0.3 * self.loss_func2(
-                        sig, mask)  #+ loss_func3(out, mask)
+                loss1 = 0.7 * self.loss_func1(out, mask)
+                bce_loss.append(loss1.item())
+                loss2 = 0.3 * self.loss_func2(sig, mask)
+                dice_loss.append(loss2.item())
+                mask_loss = loss1 + loss2  #+ loss_func3(out, mask)
+                # mask_loss = 0.7 * self.loss_func1(
+                #     out, mask) + 0.3 * self.loss_func2(
+                #         sig, mask)  #+ loss_func3(out, mask)
             else:
                 mask_loss = self.loss_func1(sig, mask) + self.loss_func2(
                     sig, mask)
@@ -226,8 +240,9 @@ class Trainer(object):
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             dataprocess.set_description_str("epoch:{}".format(epoch))
-            dataprocess.set_postfix_str("mask_loss:{:.4f}".format(
-                np.mean(total_mask_loss)))
+            dataprocess.set_postfix_str("m:{:.4f},d:{:.4f},b:{:.4f} ".format(
+                np.mean(total_mask_loss), np.mean(dice_loss),
+                np.mean(bce_loss)))
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
@@ -273,7 +288,9 @@ class Trainer(object):
             optimizer = torch.optim.AdamW(net.parameters(), weight_decay=0.002)
             adjust_lr = self.adjust_lr_adam
         else:
-            optimizer = torch.optim.RMSprop(net.parameters(), momentum=0.9)
+            optimizer = torch.optim.RMSprop(net.parameters(),
+                                        momentum=0.99,
+                                        weight_decay=0.02)
             adjust_lr = self.adjust_lr_adam
         last_MIOU = 0.0
 
