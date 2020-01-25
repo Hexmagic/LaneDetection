@@ -194,7 +194,11 @@ class Unet(nn.Module):
         self.up02 = up3(4 * cc, cc)  # 64 16
         self.up03 = up4(5 * cc, cc)  # 80 16
         self.up04 = up5(6 * cc, cc)
-        self.outconv = outconv(cc, n_classes)
+        self.outconv0 = outconv(cc, n_classes)
+        self.outconv1 = outconv(cc, n_classes)
+        self.outconv2 = outconv(cc, n_classes)
+        self.outconv3 = outconv(cc, n_classes)
+        self.outconv = outconv(n_classes * 4, n_classes)
 
     def forward(self, x):
         x00 = self.inconv(x)  #cc
@@ -212,8 +216,12 @@ class Unet(nn.Module):
         x02 = self.up02(x11, x01, x00)
         x03 = self.up03(x12, x02, x01, x00)  #2cc,cc,cc,2cc
         x04 = self.up04(x13, x03, x02, x01, x00)
-        y = self.outconv(x04, x)
-        return y
+        y0 = self.outconv0(x01, x)
+        y1 = self.outconv0(x02, x)
+        y2 = self.outconv0(x03, x)
+        y3 = self.outconv0(x04, x)
+        y = torch.cat([y0, y1, y2, y3], dim=1)
+        return self.outconv(y)
 
 
 if __name__ == '__main__':
@@ -221,7 +229,7 @@ if __name__ == '__main__':
     import thop
     x = torch.rand((1, 3, 846, 255))
     lnet = Unet(3)
-    #rst = thop.profile(lnet, (x, ))
-    #print(rst)
+    rst = thop.profile(lnet, (x, ))
+    print(rst)
     rtn = lnet(x)
     print(rtn.shape)
