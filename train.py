@@ -135,6 +135,12 @@ class Trainer(object):
         i = 0
 
         dataprocess.set_description_str("epoch:{}".format(epoch))
+        result = {
+            "TP": {i: 0
+                   for i in range(8)},
+            "TA": {i: 0
+                   for i in range(8)}
+        }
         for i, batch_item in enumerate(dataprocess):
             if i % 100 == 0:
                 self.trainF.flush()
@@ -155,6 +161,9 @@ class Trainer(object):
                     sig, mask)
             mask_loss.backward()
             total_mask_loss.append(mask_loss.item())
+            pred = torch.argmax(F.softmax(out, dim=1), dim=1)
+            mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
+            result = compute_iou(pred, mask, result)
             if i % 5 == 0:
                 dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
                     np.mean(total_mask_loss)))
@@ -168,6 +177,8 @@ class Trainer(object):
         print(mean_loss)
         self.trainF.write(mean_loss)
         self.trainF.flush()
+        print("Train MIOU")
+        self.mean_iou(epoch, result)
 
     def mean_iou(self, epoch, result):
         '''
@@ -220,6 +231,7 @@ class Trainer(object):
             self.testF.write(f'Epoch {epoch} loss {mask_loss.item()}\n')
 
         self.testF.flush()
+        print("Test MIOU")
         return self.mean_iou(epoch, result)
 
     def load_model(self):
