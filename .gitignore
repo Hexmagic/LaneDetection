@@ -16,7 +16,8 @@ log/*
 play/
 benz/*
 bmw/*
-
+data
+*.png
 *.jpg
 # my ignore
 .vscode

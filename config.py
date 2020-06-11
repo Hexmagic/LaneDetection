@@ -5,7 +5,7 @@ MEMORY = 6
 CSV_PATH = 'data_list'
 if not os.path.exists(CSV_PATH):
     os.mkdir(CSV_PATH)
-DATAROOT = '/root/data/LaneSeg' if sys.platform != 'win32' else "D:\Compressed"
+
 LOGPATH = 'log'
 MODELNAME = 'laneNet.pth'
 PREDICT_PATH = 'predict'
