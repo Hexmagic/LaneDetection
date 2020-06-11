@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.utils import shuffle
 from logzero import logger
 import json
-from setting import RoadList, DATAROOT, CSV_PATH
 from sklearn.model_selection import train_test_split
 
 
