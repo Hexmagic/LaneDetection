@@ -39,7 +39,7 @@ class LanDataSet(Dataset):
         super(LanDataSet, self).__init__()
         self.size = size
         self.transform = transform or ToTensor()
-        self.csv = pd.read_csv(root)
+        
 
     def __len__(self):
         return len(self.csv)
