@@ -25,7 +25,7 @@ class LaneDataSet(Dataset):
         self.wid = 846
         self.hei = 255
         self.min_size = 846
-        self.max_size = 1692
+        self.max_size = 846+2
         self.ratio = 846 / 255
         if self.mode == 'train':
             self.transform = Compose([
@@ -42,9 +42,9 @@ class LaneDataSet(Dataset):
 
     def __getitem__(self, index):
         row = self.lines[index].strip()
-        img = cv2.imread(f'data/images/{row}')
+        img = cv2.imread(f'data/images/{row.replace(".png",".jpg")}')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(f'data/labels/{row.replace(".jpg",".png")}', 0)
+        mask = cv2.imread(f'data/labels/{row}', 0)
         img, mask = img[690:, :, :], mask[690:, :]
         if self.transform:
             img = self.transform(img)
@@ -58,6 +58,7 @@ class LaneDataSet(Dataset):
         return image
 
     def collate_fn(self, batch):
+        #import pdb; pdb.set_trace()
         imgs, labels = list(zip(*batch))
         if self.batch_cnt % 10 == 0:
             self.wid = random.choice(range(self.min_size, self.max_size))
@@ -73,6 +74,6 @@ class LaneDataSet(Dataset):
 if __name__ == '__main__':
     data = LaneDataSet()
     from torch.utils.data import DataLoader
-    loader = DataLoader(data, batch_size=2, collate_fn=data.collate_fn)
+    loader = DataLoader(data, batch_size=2, collate_fn=data.collate_fn,num_workers=2)
     for batch in loader:
         print(batch[0].shape)
