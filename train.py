@@ -213,7 +213,7 @@ def main():
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--multi_scale", action="store_true")
-    parser.add_argument("--height", type=int, default=846)
+    parser.add_argument("--wid", type=int, default=846)
     parser.add_argument("--lr", type=float, help="基础学习率，默认6e-4", default=6e-4)
     args = parser.parse_args()
     trainer = Trainer(args=args)
