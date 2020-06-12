@@ -24,15 +24,17 @@ def one_hot(img):
 
 
 class LaneDataSet(Dataset):
-    def __init__(self, mode="train"):
+    def __init__(self, mode="train", multi_sacle=False, wid=846):
         super(LaneDataSet, self).__init__()
         self.mode = mode
         self.batch_cnt = 0
-        self.wid = 846
-        self.hei = 255
-        self.min_size = 846
-        self.max_size = 1692
-        self.ratio = 846 / 255
+        self.ratio = 846 / 255.01
+        self.wid = wid
+        self.multi_scale = multi_sacle
+        self.hei = int(wid / self.ratio)
+        self.min_size = int(wid * 0.8)
+        self.max_size = int(wid * 1.2)
+
         if self.mode == "train":
             self.transform = Compose(
                 [
@@ -69,7 +71,7 @@ class LaneDataSet(Dataset):
     def collate_fn(self, batch):
         # import pdb; pdb.set_trace()
         imgs, labels = list(zip(*batch))
-        if self.batch_cnt % 10 == 0:
+        if self.batch_cnt % 10 == 0 and self.multi_scale:
             self.wid = random.choice(range(self.min_size, self.max_size))
             self.hei = int(self.wid / self.ratio)
         imgs = torch.stack([self.resize(img, (self.hei, self.wid)) for img in imgs])

@@ -67,7 +67,9 @@ class Trainer(object):
         total_mask_loss = []
         bce_loss = []
         dice_loss = []
-        data_set = LaneDataSet("train")
+        data_set = LaneDataSet(
+            "train", multi_sacle=self.args.multi_sacle, wid=self.args.wid
+        )
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -136,7 +138,9 @@ class Trainer(object):
         total_mask_loss = []
         bce_loss = []
         dice_loss = []
-        data_set = LaneDataSet("val")
+        data_set = LaneDataSet(
+            "val", multi_sacle=self.args.multi_sacle, wid=self.args.wid
+        )
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -204,10 +208,12 @@ def main():
     parser = argparse.ArgumentParser()
     if os.path.exists("weights"):
         os.mkidr("weights")
-    parser.add_argument("--batch-size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--weights", type=str, help="预训练模型")
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--multi_scale", action="store_true")
+    parser.add_argument("--height", type=int, default=846)
     parser.add_argument("--lr", type=float, help="基础学习率，默认6e-4", default=6e-4)
     args = parser.parse_args()
     trainer = Trainer(args=args)
