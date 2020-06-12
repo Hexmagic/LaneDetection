@@ -79,24 +79,22 @@ class LaneDataSet(Dataset):
         return image
 
     def resize_tlabel(self, image, size):
-        image = F.interpolate(
-            image.unsqueeze(0), size=size, mode="nearest"
-        ).squeeze(0)
+        image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
         return image
 
     def collate_fn(self, batch):
-        # import pdb; pdb.set_trace()
         imgs, labels = list(zip(*batch))
-        if self.batch_cnt % 10 == 0 and self.multi_scale:
-            self.wid = random.choice(range(self.min_size, self.max_size))
-            self.hei = int(self.wid / self.ratio)
-        imgs = torch.stack(
-            [self.resize_timg(img, (self.hei, self.wid)) for img in imgs]
-        )
-        labels = torch.stack(
-            [self.resize_tlabel(img, (self.hei, self.wid)) for img in labels]
-        )
-        self.batch_cnt += 1
+        if self.multi_scale:
+            if self.batch_cnt % 10 == 0 and self.multi_scale:
+                self.wid = random.choice(range(self.min_size, self.max_size))
+                self.hei = int(self.wid / self.ratio)
+            imgs = torch.stack(
+                [self.resize_timg(img, (self.hei, self.wid)) for img in imgs]
+            )
+            labels = torch.stack(
+                [self.resize_tlabel(img, (self.hei, self.wid)) for img in labels]
+            )
+            self.batch_cnt += 1
         return imgs, labels
 
 
@@ -104,7 +102,9 @@ if __name__ == "__main__":
     data = LaneDataSet()
     from torch.utils.data import DataLoader
 
-    loader = DataLoader(data, batch_size=1, collate_fn=data.collate_fn, num_workers=1)
+    loader = DataLoader(
+        data, batch_size=1
+    )  # collate_fn=data.collate_fn, num_workers=1)
     i = 0
     import time
 
