@@ -20,11 +20,11 @@ def main():
         jpg_globs = list(path.glob("./*/*/*/*/*.jpg"))
         for jpg in tqdm(jpg_globs, desc="移动图片"):
             # print(jpg)
-            shutil.copyfile(str(jpg), f"data/images/{jpg.name}")
+            shutil.move(str(jpg), f"data/images/{jpg.name}")
         lpath = Path("data/Gray_Label")
         gray_globs = list(lpath.glob("./*/*/*/*/*.png"))
         for png in tqdm(gray_globs, desc="移动标签"):
-            shutil.copyfile(str(png), f"data/labels/{png.name.replace('_bin','')}")
+            shutil.move(str(png), f"data/labels/{png.name.replace('_bin','')}")
 
     label_ids = os.listdir("data/labels")
     image_ids = set(os.listdir("data/images"))
