@@ -68,7 +68,7 @@ class Trainer(object):
         bce_loss = []
         dice_loss = []
         data_set = LaneDataSet(
-            "train", multi_sacle=self.args.multi_sacle, wid=self.args.wid
+            "train", multi_scale=self.args.multi_scale, wid=self.args.wid
         )
         dataprocess = tqdm(
             DataLoader(
@@ -139,7 +139,7 @@ class Trainer(object):
         bce_loss = []
         dice_loss = []
         data_set = LaneDataSet(
-            "val", multi_sacle=self.args.multi_sacle, wid=self.args.wid
+            "val", multi_scale=self.args.multi_scale, wid=self.args.wid
         )
         dataprocess = tqdm(
             DataLoader(

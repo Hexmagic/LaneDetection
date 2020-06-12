@@ -24,13 +24,13 @@ def one_hot(img):
 
 
 class LaneDataSet(Dataset):
-    def __init__(self, mode="train", multi_sacle=False, wid=846):
+    def __init__(self, mode="train", multi_scale=False, wid=846):
         super(LaneDataSet, self).__init__()
         self.mode = mode
         self.batch_cnt = 0
         self.ratio = 846 / 255.01
         self.wid = wid
-        self.multi_scale = multi_sacle
+        self.multi_scale = multi_scale
         self.hei = int(wid / self.ratio)
         self.min_size = int(wid * 0.8)
         self.max_size = int(wid * 1.2)
