@@ -73,7 +73,8 @@ class Trainer(object):
                 data_set,
                 batch_size=self.args.batch_size,
                 shuffle=True,
-                num_workers=2,
+                num_workers=4,
+                pin_memory=True,
                 collate_fn=data_set.collate_fn,
             ),
             dynamic_ncols=True,
@@ -139,9 +140,10 @@ class Trainer(object):
         dataprocess = tqdm(
             DataLoader(
                 data_set,
-                batch_size=1,
+                batch_size=4,
                 shuffle=True,
-                num_workers=2,
+                num_workers=4,
+                pin_memory=True,
                 collate_fn=data_set.collate_fn,
             ),
             dynamic_ncols=True,
