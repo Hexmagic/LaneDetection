@@ -50,21 +50,37 @@ class LaneDataSet(Dataset):
     def __len__(self):
         return len(self.lines)
 
+    def resize_img(self, img):
+        img = cv2.resize(img, (self.hei, self.wid), interpolation=cv2.INTER_LINEAR)
+        return img
+
+    def resize_mask(self, mask):
+        mask = cv2.resize(mask, (self.hei, self.wid), interpolation=cv2.INTER_NEAREST)
+        return mask
+
     def __getitem__(self, index):
         row = self.lines[index].strip()
         img = cv2.imread(f'data/images/{row.replace(".png",".jpg")}')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         mask = cv2.imread(f"data/labels/{row}", 0)
         img, mask = img[690:, :, :], mask[690:, :]
+        img = self.resize_img(img)
+        mask = self.resize_mask(mask)
         if self.transform:
             img = self.transform(img)
         label = mask_to_label(mask)
         label = one_hot(label)
         return img, torch.Tensor(label)
 
-    def resize(self, image, size):
+    def resize_timg(self, image, size):
         image = F.interpolate(
             image.unsqueeze(0), size=size, mode="bilinear", align_corners=True
+        ).squeeze(0)
+        return image
+
+    def resize_tlabel(self, image, size):
+        image = F.interpolate(
+            image.unsqueeze(0), size=size, mode="nearest"
         ).squeeze(0)
         return image
 
@@ -74,8 +90,12 @@ class LaneDataSet(Dataset):
         if self.batch_cnt % 10 == 0 and self.multi_scale:
             self.wid = random.choice(range(self.min_size, self.max_size))
             self.hei = int(self.wid / self.ratio)
-        imgs = torch.stack([self.resize(img, (self.hei, self.wid)) for img in imgs])
-        labels = torch.stack([self.resize(img, (self.hei, self.wid)) for img in labels])
+        imgs = torch.stack(
+            [self.resize_timg(img, (self.hei, self.wid)) for img in imgs]
+        )
+        labels = torch.stack(
+            [self.resize_tlabel(img, (self.hei, self.wid)) for img in labels]
+        )
         self.batch_cnt += 1
         return imgs, labels
 
@@ -84,6 +104,15 @@ if __name__ == "__main__":
     data = LaneDataSet()
     from torch.utils.data import DataLoader
 
-    loader = DataLoader(data, batch_size=2, collate_fn=data.collate_fn, num_workers=2)
+    loader = DataLoader(data, batch_size=1, collate_fn=data.collate_fn, num_workers=1)
+    i = 0
+    import time
+
+    ss = time.time()
     for batch in loader:
+        i += 1
+        if i > 10:
+            break
         print(batch[0].shape)
+    end = time.time()
+    print(end - ss)
