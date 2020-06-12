@@ -34,6 +34,8 @@ class LaneDataSet(Dataset):
                 ToTensor(),
                 RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(1, 2.5)),
             ])
+        else:
+            self.transform =ToTensor()
         with open(f'data/{mode}.txt', 'r') as f:
             self.lines = f.readlines()
 
