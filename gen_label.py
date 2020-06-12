@@ -3,6 +3,13 @@ from pathlib import Path
 import shutil
 from tqdm import tqdm
 from random import shuffle
+from typing import List
+
+
+def write_file(img_ids: List[str], filename):
+    with open(filename, 'w') as f:
+        for line in img_ids:
+            f.write(line + '\n')
 
 
 def main():
@@ -24,8 +31,9 @@ def main():
     image_ids = os.listdir("data/images")
     shuffle(image_ids)
     length = len(image_ids)
-    train, valid = image_ids[: int(length * 0.7)], image_ids[int(length * 0.7) :]
-    
+    train, valid = image_ids[:int(length * 0.7)], image_ids[int(length * 0.7):]
+    write_file(train, 'data/train.txt')
+    write_file(valid, 'data/val.txt')
 
 
 if __name__ == "__main__":
