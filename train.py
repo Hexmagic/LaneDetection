@@ -164,7 +164,7 @@ class Trainer(object):
             image, mask = batch_item
             if torch.cuda.is_available():
                 image, mask = (
-                    Variable(image).cuda()
+                    Variable(image).cuda(),
                     Variable(mask).cuda()
                 )
             out = net(image)
