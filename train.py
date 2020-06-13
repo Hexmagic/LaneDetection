@@ -160,7 +160,10 @@ class Trainer(object):
         )
         result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
         # loss_func3 = FocalLoss().cuda(device=self.ids[0])
+        dataprocess.set_description_str("epoch:{}".format(epoch))
+        i = 0
         for batch_item in dataprocess:
+            i+=1
             image, mask = batch_item
             if torch.cuda.is_available():
                 image, mask = (
@@ -179,12 +182,12 @@ class Trainer(object):
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
-            dataprocess.set_description_str("epoch:{}".format(epoch))
-            dataprocess.set_postfix_str(
-                "t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
-                    np.mean(total_mask_loss), np.mean(bce_loss), np.mean(dice_loss)
+            if i%10==0:
+                dataprocess.set_postfix_str(
+                    "t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
+                        np.mean(total_mask_loss), np.mean(bce_loss), np.mean(dice_loss)
+                    )
                 )
-            )
         print("Test MIOU")
         return self.mean_iou(epoch, result)
 
@@ -197,9 +200,9 @@ class Trainer(object):
         last_MIOU = 0.0
         for epoch in range(self.args.epochs):
             self.adjust_lr(optimizer,epoch)
+            self.train(net, epoch, optimizer)
             with torch.no_grad():
                 miou = self.valid(net, epoch)
-            self.train(net, epoch, optimizer)
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
