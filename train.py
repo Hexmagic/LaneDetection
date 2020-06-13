@@ -40,6 +40,12 @@ class Trainer(object):
             ele = np.argmax(ele, axis=0)
             rst.append(label_to_color_mask(ele))
         return rst
+    
+    def adjust_lr(self,opt,epoch):
+        base_lr = 0.001
+        lr = base_lr-(epoch%5)*1e-4
+        for param in opt.parameters():
+            param['lr']=lr
 
     def visual(self, img, sig, mask, total_mask_loss):
         """
@@ -158,8 +164,8 @@ class Trainer(object):
             image, mask = batch_item
             if torch.cuda.is_available():
                 image, mask = (
-                    Variable(image).cuda(device=self.ids[0]),
-                    Variable(mask).cuda(device=self.ids[0]),
+                    Variable(image).cuda()
+                    Variable(mask).cuda()
                 )
             out = net(image)
             sig = torch.sigmoid(out)
@@ -190,9 +196,10 @@ class Trainer(object):
         optimizer = torch.optim.AdamW(net.parameters(), weight_decay=5e-4)
         last_MIOU = 0.0
         for epoch in range(self.args.epochs):
-            self.train(net, epoch, optimizer)
+            self.adjust_lr(optimizer,epoch)
             with torch.no_grad():
                 miou = self.valid(net, epoch)
+            self.train(net, epoch, optimizer)
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
