@@ -216,8 +216,8 @@ def main():
     import os
 
     parser = argparse.ArgumentParser()
-    if os.path.exists("weights"):
-        os.mkidr("weights")
+    if not os.path.exists("weights"):
+        os.mkdir("weights")
     parser.add_argument("--batch_size", type=int, default=1)
     parser.add_argument("--weights", type=str, help="预训练模型")
     parser.add_argument("--visdom", action="store_true")
