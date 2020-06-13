@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
 
-from model.deeplabv3_plus import DeeplabV3Plus
+from model.unet_plus import Unet
 from util.dataset import LaneDataSet
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
@@ -186,7 +186,7 @@ class Trainer(object):
         if self.args.weights:
             net = torch.load(self.args.weights)
         else:
-            net = DeeplabV3Plus(8).cuda()
+            net = Unet(8).cuda()
         optimizer = torch.optim.AdamW(net.parameters(), weight_decay=5e-4)
         last_MIOU = 0.0
         for epoch in range(self.args.epochs):
