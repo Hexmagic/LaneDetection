@@ -44,7 +44,7 @@ class Trainer(object):
     def adjust_lr(self,opt,epoch):
         base_lr = 0.001
         lr = base_lr-(epoch%5)*1e-4
-        for param in opt.param_groups():
+        for param in opt.param_groups:
             param['lr']=lr
 
     def visual(self, img, sig, mask, total_mask_loss):
