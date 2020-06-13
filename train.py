@@ -81,7 +81,7 @@ class Trainer(object):
                 data_set,
                 batch_size=self.args.batch_size,
                 shuffle=True,
-                num_workers=4,
+                num_workers=self.args.batch_size,
                 pin_memory=True,
                 #collate_fn=data_set.collate_fn,
             ),
