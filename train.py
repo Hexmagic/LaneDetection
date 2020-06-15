@@ -11,8 +11,9 @@ from torch.nn import BCEWithLogitsLoss, DataParallel
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
-
+from math import sqrt
 from model.unet_plus import Unet
+from model.deeplabv3_plus import DeeplabV3Plus
 from util.dataset import LaneDataSet
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
@@ -40,12 +41,12 @@ class Trainer(object):
             ele = np.argmax(ele, axis=0)
             rst.append(label_to_color_mask(ele))
         return rst
-    
-    def adjust_lr(self,opt,epoch):
-        base_lr = 0.001
-        lr = base_lr-(epoch%5)*1e-4
+
+    def adjust_lr(self, opt, epoch):
+        base_lr = self.args.lr
+        lr = base_lr - (epoch % 5) * 1e-4 - sqrt(epoch)*1e-5
         for param in opt.param_groups:
-            param['lr']=lr
+            param['lr'] = lr
 
     def visual(self, img, sig, mask, total_mask_loss):
         """
@@ -61,7 +62,9 @@ class Trainer(object):
         if self.visdom:
             self.visdom.images(img, win="Image", opts=dict(title="colorimg"))
             self.visdom.images(pred, win="Pred", opts=dict(title="pred"))
-            self.visdom.images(ground_truth, win="GroudTruth", opts=dict(title="label"))
+            self.visdom.images(ground_truth,
+                               win="GroudTruth",
+                               opts=dict(title="label"))
             self.visdom.line(
                 total_mask_loss,
                 win="train_iter_loss",
@@ -73,9 +76,9 @@ class Trainer(object):
         total_mask_loss = []
         bce_loss = []
         dice_loss = []
-        data_set = LaneDataSet(
-            "train", multi_scale=self.args.multi_scale, wid=self.args.wid
-        )
+        data_set = LaneDataSet("train",
+                               multi_scale=self.args.multi_scale,
+                               wid=self.args.wid)
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -90,7 +93,12 @@ class Trainer(object):
         i = 0
 
         dataprocess.set_description_str("epoch:{}".format(epoch))
-        result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
+        result = {
+            "TP": {i: 0
+                   for i in range(8)},
+            "TA": {i: 0
+                   for i in range(8)}
+        }
         for i, batch_item in enumerate(dataprocess):
             image, mask = batch_item
             image, mask = Variable(image).cuda(), Variable(mask).cuda()
@@ -113,9 +121,8 @@ class Trainer(object):
             if i % 5 == 0:
                 dataprocess.set_postfix_str(
                     "t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
-                        np.mean(total_mask_loss), np.mean(bce_loss), np.mean(dice_loss)
-                    )
-                )
+                        np.mean(total_mask_loss), np.mean(bce_loss),
+                        np.mean(dice_loss)))
                 # dataprocess.set_postfix_str("mask_loss:{:.7f}".format(
                 #     np.mean(total_mask_loss)))
                 if self.args.visdom:
@@ -134,7 +141,8 @@ class Trainer(object):
         """
         miou = 0
         for i in range(1, 8):
-            result_string = "{}: {:.4f} \n".format(i, result["TP"][i] / result["TA"][i])
+            result_string = "{}: {:.4f} \n".format(
+                i, result["TP"][i] / result["TA"][i])
             print(result_string)
             miou += result["TP"][i] / result["TA"][i]
         return miou / 7
@@ -144,9 +152,9 @@ class Trainer(object):
         total_mask_loss = []
         bce_loss = []
         dice_loss = []
-        data_set = LaneDataSet(
-            "val", multi_scale=self.args.multi_scale, wid=self.args.wid
-        )
+        data_set = LaneDataSet("val",
+                               multi_scale=self.args.multi_scale,
+                               wid=self.args.wid)
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -158,18 +166,20 @@ class Trainer(object):
             ),
             dynamic_ncols=True,
         )
-        result = {"TP": {i: 0 for i in range(8)}, "TA": {i: 0 for i in range(8)}}
+        result = {
+            "TP": {i: 0
+                   for i in range(8)},
+            "TA": {i: 0
+                   for i in range(8)}
+        }
         # loss_func3 = FocalLoss().cuda(device=self.ids[0])
         dataprocess.set_description_str("epoch:{}".format(epoch))
         i = 0
         for batch_item in dataprocess:
-            i+=1
+            i += 1
             image, mask = batch_item
             if torch.cuda.is_available():
-                image, mask = (
-                    Variable(image).cuda(),
-                    Variable(mask).cuda()
-                )
+                image, mask = (Variable(image).cuda(), Variable(mask).cuda())
             out = net(image)
             sig = torch.sigmoid(out)
             loss1 = 0.7 * self.loss_func1(out, mask)
@@ -182,12 +192,11 @@ class Trainer(object):
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
             result = compute_iou(pred, mask, result)
-            if i%10==0:
+            if i % 10 == 0:
                 dataprocess.set_postfix_str(
                     "t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
-                        np.mean(total_mask_loss), np.mean(bce_loss), np.mean(dice_loss)
-                    )
-                )
+                        np.mean(total_mask_loss), np.mean(bce_loss),
+                        np.mean(dice_loss)))
         print("Test MIOU")
         return self.mean_iou(epoch, result)
 
@@ -195,11 +204,13 @@ class Trainer(object):
         if self.args.weights:
             net = torch.load(self.args.weights)
         else:
-            net = Unet(8).cuda()
-        optimizer = torch.optim.AdamW(net.parameters(), weight_decay=5e-4)
+            net = DeeplabV3Plus(8).cuda()
+        optimizer = torch.optim.AdamW(net.parameters(),
+                                      lr=self.args.lr,
+                                      weight_decay=5e-4)
         last_MIOU = 0.0
         for epoch in range(self.args.epochs):
-            self.adjust_lr(optimizer,epoch)
+            self.adjust_lr(optimizer, epoch)
             self.train(net, epoch, optimizer)
             with torch.no_grad():
                 miou = self.valid(net, epoch)
