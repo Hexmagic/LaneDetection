@@ -44,7 +44,7 @@ class Trainer(object):
 
     def adjust_lr(self, opt, epoch):
         base_lr = self.args.lr
-        lr = base_lr - (epoch % 5) * 1e-4 - sqrt(epoch)*1e-5
+        lr = base_lr - (epoch % 5) * 1e-4 - sqrt(epoch) * 1e-5
         for param in opt.param_groups:
             param['lr'] = lr
 
@@ -217,9 +217,9 @@ class Trainer(object):
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
-                torch.save(net, os.path.join(os.getcwd(), f"weights/best.pt"))
+                torch.save(net, os.path.join(os.getcwd(), f"/content/drive/Shared drives/Hexmagic/model/best.pt"))
                 last_MIOU = miou
-        torch.save(net, f"weights/last.pt")
+        torch.save(net, f"/content/drive/Shared drives/Hexmagic/model/last.pt")
 
 
 def main():
