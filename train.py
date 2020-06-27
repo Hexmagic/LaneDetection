@@ -217,8 +217,19 @@ class Trainer(object):
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
-                torch.save(net, os.path.join(os.getcwd(), f"/content/drive/Shared drives/Hexmagic/model/best.pt"))
+                torch.save(
+                    net,
+                    os.path.join(
+                        os.getcwd(),
+                        f"/content/drive/Shared drives/Hexmagic/model/best.pt")
+                )
                 last_MIOU = miou
+            torch.save(
+                net,
+                os.path.join(
+                    os.getcwd(),
+                    f"/content/drive/Shared drives/Hexmagic/model/{epoch}_lane.pt"
+                ))
         torch.save(net, f"/content/drive/Shared drives/Hexmagic/model/last.pt")
 
 
