@@ -1,25 +1,27 @@
 import os
 import shutil
 import sys
+from math import sqrt
 
 # os.environ["CUDA_VISIBLE_DEVICES"] = "7"
 import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
-from torch.nn import BCEWithLogitsLoss, DataParallel
+from torch.nn import BCEWithLogitsLoss
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from tqdm import tqdm
-from math import sqrt
+
 from model.unet_plus import Unet
 from model.deeplabv3_plus import DeeplabV3Plus
-from util.dataset import LaneDataSet
+from dataset.dataset import LaneDataSet
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
-
-
+import torch
+torch.backends.cudnn.enabled=True
+torch.backends.cudnn.benchmark=True
 class Trainer(object):
     def __init__(self, args):
         self.lr = args.lr
@@ -78,7 +80,7 @@ class Trainer(object):
         dice_loss = []
         data_set = LaneDataSet("train",
                                multi_scale=self.args.multi_scale,
-                               wid=self.args.wid)
+                               wid=self.args.wid)        
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -162,7 +164,7 @@ class Trainer(object):
                 shuffle=True,
                 num_workers=4,
                 pin_memory=True,
-                #collate_fn=data_set.collate_fn,
+                collate_fn=data_set.collate_fn,
             ),
             dynamic_ncols=True,
         )
@@ -221,16 +223,16 @@ class Trainer(object):
                     net,
                     os.path.join(
                         os.getcwd(),
-                        f"/content/drive/Shared drives/Hexmagic/model/best.pt")
+                        f"weights/best.pt")
                 )
                 last_MIOU = miou
             torch.save(
                 net,
                 os.path.join(
                     os.getcwd(),
-                    f"/content/drive/Shared drives/Hexmagic/model/{epoch}_lane.pt"
+                    f"weights/{epoch}_lane.pt"
                 ))
-        torch.save(net, f"/content/drive/Shared drives/Hexmagic/model/last.pt")
+        torch.save(net, f"weights/last.pt")
 
 
 def main():
@@ -240,7 +242,7 @@ def main():
     parser = argparse.ArgumentParser()
     if not os.path.exists("weights"):
         os.mkdir("weights")
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--weights", type=str, help="预训练模型")
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
@@ -248,6 +250,7 @@ def main():
     parser.add_argument("--wid", type=int, default=846)
     parser.add_argument("--lr", type=float, help="基础学习率，默认6e-4", default=6e-4)
     args = parser.parse_args()
+    print(args)
     trainer = Trainer(args=args)
     trainer.run()
 

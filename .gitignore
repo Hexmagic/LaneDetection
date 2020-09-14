@@ -10,6 +10,8 @@ __pycache__/
 *.zip
 *.txt
 *.csv
+data
+weights
 *.pyc
 vw/*
 log/*

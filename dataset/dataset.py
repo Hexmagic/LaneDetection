@@ -1,5 +1,7 @@
+import pdb
 import cv2
 import numpy as np
+from numpy.core.fromnumeric import sort
 import pandas as pd
 import torch
 import random
@@ -14,6 +16,7 @@ from torchvision.transforms import (
 )
 from util.label_util import mask_to_label
 import torch.nn.functional as F
+from glob import glob
 
 
 def one_hot(img):
@@ -24,7 +27,7 @@ def one_hot(img):
 
 
 class LaneDataSet(Dataset):
-    def __init__(self, mode="train", multi_scale=False, wid=846):
+    def __init__(self, mode="train", root='data', multi_scale=False, wid=846):
         super(LaneDataSet, self).__init__()
         self.mode = mode
         self.batch_cnt = 0
@@ -34,37 +37,39 @@ class LaneDataSet(Dataset):
         self.hei = int(wid / self.ratio)
         self.min_size = int(wid * 0.8)
         self.max_size = int(wid * 1.2)
-
+        imgs = list(glob(f'{root}/**/*.jpg',recursive=True))
+        pos = int(len(imgs) * 0.8)
         if self.mode == "train":
-            self.transform = Compose(
-                [
-                    ToPILImage(),
-                    ColorJitter(0.2, 0.2, 0.2),
-                    ToTensor(),
-                    RandomErasing(p=0.3, scale=(0.02, 0.1), ratio=(1, 2.5)),
-                ]
-            )
+            self.transform = Compose([
+                ToPILImage(),
+                ColorJitter(0.4, 0.3, 0.3),
+                ToTensor(),
+                RandomErasing(p=0.5, scale=(0.03, 0.2), ratio=(0.1, 5)),
+            ])
+            self.files = imgs[:pos]
         else:
-            self.transform=ToTensor()
-        with open(f"data/{mode}.txt", "r") as f:
-            self.lines = f.readlines()
+            self.files = imgs[pos:]
+            self.transform = ToTensor()
 
     def __len__(self):
-        return len(self.lines)
+        return len(self.files)
 
     def resize_img(self, img):
-        img = cv2.resize(img, (self.hei, self.wid), interpolation=cv2.INTER_LINEAR)
+        img = cv2.resize(img, (self.wid, self.hei),
+                         interpolation=cv2.INTER_LINEAR)
         return img
 
     def resize_mask(self, mask):
-        mask = cv2.resize(mask, (self.hei, self.wid), interpolation=cv2.INTER_NEAREST)
+        mask = cv2.resize(mask, (self.wid, self.hei),
+                          interpolation=cv2.INTER_NEAREST)
         return mask
 
     def __getitem__(self, index):
-        row = self.lines[index].strip()
-        img = cv2.imread(f'data/images/{row.replace(".png",".jpg")}')
+        row = self.files[index].strip()
+        img = cv2.imread(row)
+        label_path = row.replace('Image/ColorImage', 'Label').replace('.jpg', '_bin.png')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(f"data/labels/{row}", 0)
+        mask = cv2.imread(label_path, 0)
         img, mask = img[690:, :, :], mask[690:, :]
         img = self.resize_img(img)
         mask = self.resize_mask(mask)
@@ -75,13 +80,15 @@ class LaneDataSet(Dataset):
         return img, torch.Tensor(label)
 
     def resize_timg(self, image, size):
-        image = F.interpolate(
-            image.unsqueeze(0), size=size, mode="bilinear", align_corners=True
-        ).squeeze(0)
+        image = F.interpolate(image.unsqueeze(0),
+                              size=size,
+                              mode="bilinear",
+                              align_corners=True).squeeze(0)
         return image
 
     def resize_tlabel(self, image, size):
-        image = F.interpolate(image.unsqueeze(0), size=size, mode="nearest").squeeze(0)
+        image = F.interpolate(image.unsqueeze(0), size=size,
+                              mode="nearest").squeeze(0)
         return image
 
     def collate_fn(self, batch):
@@ -91,11 +98,10 @@ class LaneDataSet(Dataset):
                 self.wid = random.choice(range(self.min_size, self.max_size))
                 self.hei = int(self.wid / self.ratio)
             imgs = torch.stack(
-                [self.resize_timg(img, (self.hei, self.wid)) for img in imgs]
-            )
-            labels = torch.stack(
-                [self.resize_tlabel(img, (self.hei, self.wid)) for img in labels]
-            )
+                [self.resize_timg(img, (self.hei, self.wid)) for img in imgs])
+            labels = torch.stack([
+                self.resize_tlabel(img, (self.hei, self.wid)) for img in labels
+            ])
             self.batch_cnt += 1
         return imgs, labels
 
@@ -103,18 +109,13 @@ class LaneDataSet(Dataset):
 if __name__ == "__main__":
     data = LaneDataSet()
     from torch.utils.data import DataLoader
-
+    
     loader = DataLoader(
-        data, batch_size=1
-    )  # collate_fn=data.collate_fn, num_workers=1)
+        data, batch_size=1)  # collate_fn=data.collate_fn, num_workers=1)
     i = 0
     import time
-
     ss = time.time()
     for batch in loader:
-        i += 1
-        if i > 10:
-            break
         print(batch[0].shape)
-    end = time.time()
-    print(end - ss)
+        print(batch[1].shape)
+        break
