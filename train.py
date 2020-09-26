@@ -15,13 +15,16 @@ from tqdm import tqdm
 
 from model.unet_plus import Unet
 from model.deeplabv3_plus import DeeplabV3Plus
+from model.unet_plus import Unet
 from dataset.dataset import LaneDataSet
 from util.label_util import label_to_color_mask
 from util.loss import DiceLoss, FocalLoss
 from util.metric import compute_iou
 import torch
-torch.backends.cudnn.enabled=True
-torch.backends.cudnn.benchmark=True
+torch.backends.cudnn.enabled = True
+torch.backends.cudnn.benchmark = True
+
+
 class Trainer(object):
     def __init__(self, args):
         self.lr = args.lr
@@ -80,7 +83,7 @@ class Trainer(object):
         dice_loss = []
         data_set = LaneDataSet("train",
                                multi_scale=self.args.multi_scale,
-                               wid=self.args.wid)        
+                               wid=self.args.wid)
         dataprocess = tqdm(
             DataLoader(
                 data_set,
@@ -154,18 +157,13 @@ class Trainer(object):
         total_mask_loss = []
         bce_loss = []
         dice_loss = []
-        data_set = LaneDataSet("val",
-                               multi_scale=self.args.multi_scale,
-                               wid=self.args.wid)
+        data_set = LaneDataSet("val", wid=self.args.wid)
         dataprocess = tqdm(
-            DataLoader(
-                data_set,
-                batch_size=4,
-                shuffle=True,
-                num_workers=4,
-                pin_memory=True,
-                collate_fn=data_set.collate_fn,
-            ),
+            DataLoader(data_set,
+                       batch_size=4,
+                       shuffle=True,
+                       num_workers=4,
+                       pin_memory=True),
             dynamic_ncols=True,
         )
         result = {
@@ -206,7 +204,10 @@ class Trainer(object):
         if self.args.weights:
             net = torch.load(self.args.weights)
         else:
-            net = DeeplabV3Plus(8).cuda()
+            if self.args.back == 'deeplab':
+                net = DeeplabV3Plus(8).cuda()
+            else:
+                net = Unet(8).cuda()
         optimizer = torch.optim.AdamW(net.parameters(),
                                       lr=self.args.lr,
                                       weight_decay=5e-4)
@@ -219,19 +220,10 @@ class Trainer(object):
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
-                torch.save(
-                    net,
-                    os.path.join(
-                        os.getcwd(),
-                        f"weights/best.pt")
-                )
+                torch.save(net, os.path.join(os.getcwd(), f"weights/best.pt"))
                 last_MIOU = miou
-            torch.save(
-                net,
-                os.path.join(
-                    os.getcwd(),
-                    f"weights/{epoch}_lane.pt"
-                ))
+            torch.save(net,
+                       os.path.join(os.getcwd(), f"weights/{epoch}_lane.pt"))
         torch.save(net, f"weights/last.pt")
 
 
@@ -246,6 +238,10 @@ def main():
     parser.add_argument("--weights", type=str, help="预训练模型")
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
+    parser.add_argument("--back",
+                        type=str,
+                        default='deeplab',
+                        help="传入deeplab或者unet")
     parser.add_argument("--multi_scale", action="store_true")
     parser.add_argument("--wid", type=int, default=846)
     parser.add_argument("--lr", type=float, help="基础学习率，默认6e-4", default=6e-4)

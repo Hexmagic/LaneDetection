@@ -21,7 +21,7 @@ def read_img(path):
 def main():
     parser = ArgumentParser('Inference')
     parser.add_argument('--model', type=str, default='weights/best.pt')
-    parser.add_argument('--img', type=str, default='sample')
+    parser.add_argument('--folder', type=str, default='sample')
     parser.add_argument('--video', type=str)
     parser.add_argument('--output', type=str, default='output')
     arg = parser.parse_args()
@@ -33,7 +33,7 @@ def main():
     with torch.no_grad():
         model.eval()
         cnt = 0
-        for filename in tqdm(os.listdir(arg.img)):
+        for filename in tqdm(os.listdir(arg.folder)):
             cnt += 1
             path = os.path.join(arg.img, filename)
             tensor = Variable(read_img(path)).cuda()
