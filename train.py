@@ -92,7 +92,7 @@ class Trainer(object):
                 shuffle=True,
                 num_workers=self.args.batch_size,
                 pin_memory=True,
-                #collate_fn=data_set.collate_fn,
+                collate_fn=data_set.collate_fn,
             ),
             dynamic_ncols=True,
         )

@@ -38,8 +38,8 @@ class LaneDataSet(Dataset):
         self.wid = wid
         self.multi_scale = multi_scale
         self.hei = int(wid / self.ratio)
-        self.min_size = int(wid * 0.8)
-        self.max_size = int(wid * 1.2)
+        self.min_size = int(wid * 0.7)
+        self.max_size = int(wid * 1.1)
         imgs = list(glob(f'{root}/**/*.jpg', recursive=True))
         pos = int(len(imgs) * 0.8)
         if self.mode == "train":
@@ -99,18 +99,21 @@ class LaneDataSet(Dataset):
             imgs = torch.stack(
                 [self.resize_timg(img, (self.hei, self.wid)) for img in imgs])
             labels = torch.stack([
-                self.resize_tlabel(img, (self.hei, self.wid)) for img in labels
+                self.resize_tlabel(label.float(), (self.hei, self.wid)) for label in labels
             ])
             self.batch_cnt += 1
+        else:
+            imgs = torch.stack(imgs)
+            labels = torch.stack(labels)
         return imgs, labels
 
 
 if __name__ == "__main__":
-    data = LaneDataSet()
+    data = LaneDataSet(multi_scale=True)
     from torch.utils.data import DataLoader
 
     loader = DataLoader(
-        data, batch_size=1)  # collate_fn=data.collate_fn, num_workers=1)
+        data, batch_size=2, collate_fn=data.collate_fn, num_workers=1)
     i = 0
     import time
     ss = time.time()
