@@ -148,9 +148,9 @@ class Trainer(object):
         miou = 0
         for i in range(1, 8):
             result_string = "{}: {:.4f} \n".format(
-                i, (result["TP"][i]+1e-5) / (result["TA"][i]+1e-5))
+                i, (result["TP"][i]) / (result["TA"][i]+1e-5))
             print(result_string)
-            miou += (result["TP"][i]+1e-5) / (result["TA"][i]+1e-5)
+            miou += (result["TP"][i]) / (result["TA"][i]+1e-5)
         return miou / 7
 
     def valid(self, net, epoch):
