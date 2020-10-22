@@ -43,7 +43,7 @@ class Trainer(object):
         """
         rst = []
         for ele in labels:
-            if len(ele.shape)==3:
+            if len(ele.shape) == 3:
                 ele = np.argmax(ele, axis=0)
             rst.append(label_to_color_mask(ele))
         return rst
@@ -148,9 +148,9 @@ class Trainer(object):
         miou = 0
         for i in range(1, 8):
             result_string = "{}: {:.4f} \n".format(
-                i, result["TP"][i] / result["TA"][i])
+                i, (result["TP"][i]+1e-5) / (result["TA"][i]+1e-5))
             print(result_string)
-            miou += result["TP"][i] / result["TA"][i]
+            miou += (result["TP"][i]+1e-5) / (result["TA"][i]+1e-5)
         return miou / 7
 
     def valid(self, net, epoch):
