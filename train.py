@@ -43,7 +43,8 @@ class Trainer(object):
         """
         rst = []
         for ele in labels:
-            ele = np.argmax(ele, axis=0)
+            if len(ele.shape)==3:
+                ele = np.argmax(ele, axis=0)
             rst.append(label_to_color_mask(ele))
         return rst
 
@@ -123,7 +124,7 @@ class Trainer(object):
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
             mask = torch.argmax(F.softmax(mask.float(), dim=1), dim=1)
             result = compute_iou(pred, mask, result)
-            if i % 5 == 0:
+            if i % 25 == 0:
                 dataprocess.set_postfix_str(
                     "t:{:.4f},l1:{:.4f},l2:{:.4f} ".format(
                         np.mean(total_mask_loss), np.mean(bce_loss),

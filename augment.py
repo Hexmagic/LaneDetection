@@ -4,7 +4,8 @@ import imageio
 from imgaug.augmenters import segmentation
 from imgaug.augmenters.arithmetic import Multiply
 from imgaug.augmenters.blend import BlendAlpha
-from imgaug.augmenters.meta import ChannelShuffle
+from imgaug.augmenters.geometric import Jigsaw
+from imgaug.augmenters.meta import ChannelShuffle, OneOf
 from imgaug.augmenters.size import CropAndPad
 import numpy as np
 import imgaug as ia
@@ -20,19 +21,27 @@ def aug_image_and_segmap(image, segmap):
     segmaps_aug = []
     seq = iaa.Sequential(
         [
-            iaa.Dropout([0.05, 0.1]),  # drop 5% or 20% of all pixels
+
             iaa.Sharpen((0.1, 0.3)),  # sharpen the image
             iaa.Affine(
-                rotate=(-10, 15)
+                rotate=(-40, 45)
             ),  # rotate by -45 to 45 degrees (affects segmaps)
             iaa.ElasticTransformation(
                 alpha=10, sigma=5
             ),  # apply water effect (affects segmaps)
             iaa.ChannelShuffle(),
-            #iaa.BlendAlphaRegularGrid(iaa.Multiply(0.0,0.5)),
+            # iaa.BlendAlphaRegularGrid(iaa.Multiply(0.0,0.5)),
             iaa.Fliplr(0.5),
             iaa.CropAndPad(),
-            iaa.CoarseDropout(0.1, size_percent=0.05, random_state=2),
+            #iaa.Jigsaw(),
+            iaa.OneOf(
+                [
+                    iaa.Dropout([0.05, 0.2]),  # drop 5% or 20% of all pixels
+                    iaa.CoarseDropout(0.2, size_percent=0.05, random_state=2),
+                ]
+
+            )
+
             #iaa.AdditiveGaussianNoise( random_state=3),
         ],
         random_order=True,

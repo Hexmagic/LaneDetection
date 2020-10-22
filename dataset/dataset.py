@@ -75,7 +75,7 @@ class LaneDataSet(Dataset):
         label = mask_to_label(mask)
         if self.mode == 'train':
             img, mask = self.transform(img, label)
-        label = one_hot(label)
+        label = one_hot(mask)
         return ToTensor()(img), torch.LongTensor(label)
 
     def resize_timg(self, image, size):
