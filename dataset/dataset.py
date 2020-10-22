@@ -1,3 +1,4 @@
+from augment import aug_image_and_segmap
 import pdb
 import cv2
 import numpy as np
@@ -10,7 +11,9 @@ from torchvision.transforms import (
     ColorJitter,
     Compose,
     RandomErasing,
-    RandomGrayscale,
+    RandomHorizontalFlip,
+    RandomRotation,
+    RandomCrop,
     ToPILImage,
     ToTensor,
 )
@@ -37,15 +40,10 @@ class LaneDataSet(Dataset):
         self.hei = int(wid / self.ratio)
         self.min_size = int(wid * 0.8)
         self.max_size = int(wid * 1.2)
-        imgs = list(glob(f'{root}/**/*.jpg',recursive=True))
+        imgs = list(glob(f'{root}/**/*.jpg', recursive=True))
         pos = int(len(imgs) * 0.8)
         if self.mode == "train":
-            self.transform = Compose([
-                ToPILImage(),
-                ColorJitter(0.4, 0.3, 0.3),
-                ToTensor(),
-                RandomErasing(p=0.5, scale=(0.03, 0.2), ratio=(0.1, 5)),
-            ])
+            self.transform = aug_image_and_segmap
             self.files = imgs[:pos]
         else:
             self.files = imgs[pos:]
@@ -67,17 +65,18 @@ class LaneDataSet(Dataset):
     def __getitem__(self, index):
         row = self.files[index].strip()
         img = cv2.imread(row)
-        label_path = row.replace('Image/ColorImage', 'Label').replace('.jpg', '_bin.png')
+        label_path = row.replace(
+            'Image/ColorImage', 'Label').replace('.jpg', '_bin.png')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         mask = cv2.imread(label_path, 0)
         img, mask = img[690:, :, :], mask[690:, :]
         img = self.resize_img(img)
         mask = self.resize_mask(mask)
-        if self.transform:
-            img = self.transform(img)
         label = mask_to_label(mask)
+        if self.mode == 'train':
+            img, mask = self.transform(img, label)
         label = one_hot(label)
-        return img, torch.Tensor(label)
+        return ToTensor()(img), torch.LongTensor(label)
 
     def resize_timg(self, image, size):
         image = F.interpolate(image.unsqueeze(0),
@@ -109,7 +108,7 @@ class LaneDataSet(Dataset):
 if __name__ == "__main__":
     data = LaneDataSet()
     from torch.utils.data import DataLoader
-    
+
     loader = DataLoader(
         data, batch_size=1)  # collate_fn=data.collate_fn, num_workers=1)
     i = 0

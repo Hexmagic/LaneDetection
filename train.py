@@ -111,7 +111,7 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
 
-            loss1 = 0.7 * self.loss_func1(out, mask)
+            loss1 = 0.7 * self.loss_func1(out, mask.float())
             bce_loss.append(loss1.item())
             loss2 = 0.3 * self.loss_func2(sig, mask)
             dice_loss.append(loss2.item())
@@ -121,7 +121,7 @@ class Trainer(object):
             total_mask_loss.append(mask_loss.item())
 
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
-            mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
+            mask = torch.argmax(F.softmax(mask.float(), dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             if i % 5 == 0:
                 dataprocess.set_postfix_str(
@@ -182,7 +182,7 @@ class Trainer(object):
                 image, mask = (Variable(image).cuda(), Variable(mask).cuda())
             out = net(image)
             sig = torch.sigmoid(out)
-            loss1 = 0.7 * self.loss_func1(out, mask)
+            loss1 = 0.7 * self.loss_func1(out, mask.float())
             bce_loss.append(loss1.item())
             loss2 = 0.3 * self.loss_func2(sig, mask)
             dice_loss.append(loss2.item())
@@ -190,7 +190,7 @@ class Trainer(object):
 
             total_mask_loss.append(mask_loss.item())
             pred = torch.argmax(F.softmax(out, dim=1), dim=1)
-            mask = torch.argmax(F.softmax(mask, dim=1), dim=1)
+            mask = torch.argmax(F.softmax(mask.float(), dim=1), dim=1)
             result = compute_iou(pred, mask, result)
             if i % 10 == 0:
                 dataprocess.set_postfix_str(
