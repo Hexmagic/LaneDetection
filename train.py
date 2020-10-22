@@ -221,11 +221,11 @@ class Trainer(object):
             if miou > last_MIOU:
                 msg = f"miou {miou} > last_MIOU {last_MIOU},save model"
                 print(msg)
-                torch.save(net, os.path.join(os.getcwd(), f"weights/best.pt"))
+                torch.save(net, os.path.join(self.args.output, f"best.pt"))
                 last_MIOU = miou
             torch.save(net,
-                       os.path.join(os.getcwd(), f"weights/{epoch}_lane.pt"))
-        torch.save(net, f"weights/last.pt")
+                       os.path.join(self.args.output, f"{epoch}_lane.pt"))
+        torch.save(net,self.args.output, f"last.pt")
 
 
 def main():
@@ -237,6 +237,7 @@ def main():
         os.mkdir("weights")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--weights", type=str, help="预训练模型")
+    parser.add_argument('--output',type=str,default='weights')
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--back",
