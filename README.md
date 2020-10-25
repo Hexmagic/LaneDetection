@@ -1,5 +1,6 @@
 ## 
 车道线识别
+
 ![](demo/demo.gif)
 
 ## 环境
@@ -16,27 +17,22 @@ GPU: RTX2060 SUPER
 pip install -r requirements.txt
 ```
 ## 数据
-截取自百度车道线数据，我这里用其中一部分Road02的数据，下载后改成下面的目录结构：
+
+截取自百度车道线复赛的数据，我这里用其中Road02和Road04的数据，新建data目录进入，下载ColorImage_road02.zip,ColorImage_road04.zip和Gray_Label_New.zip 解压即可(zip文件可删除)，目录结构如下:
+
 ```
 data
-├── Image
-│   └── ColorImage
-└── Label
-    ├── Record015
-    ├── Record016
-    ├── Record018
-    ├── Record019
-    ├── Record020
-    ├── Record021
-    ├── Record022
-    ├── Record023
-    ├── Record024
-    ├── Record025
-    ├── Record026
-    ├── Record027
-    ├── Record028
-    ├── Record029
-    └── Record030
+├── ColorImage_road02
+│   └── ColorImage
+├── ColorImage_road02.zip
+├── ColorImage_road04
+│   └── ColorImage
+├── ColorImage_road04.zip
+├── Gray_Label
+│   ├── Label_road02
+│   ├── Label_road03
+│   └── Label_road04
+└── Gray_Label_New.zip
 ```
 
 ## 训练
@@ -52,6 +48,15 @@ back还可以选unet(实际是unet++)，unet训练推断速度快，但是精度
 经过三个阶段的训练deeplab的测试集mAP可以达到83%,Unet大概75%左右
 
 ## 推断
+
+预训练模型：
+
+>之前做过的没有保存，由于资源限制，我现在只能提供训练第一阶段的Deeplab模型，训练了约为8个Epoch，mAP约为0.75,
+
+百度网盘: [链接](https://pan.baidu.com/s/19TZyCihG7z105PLUFLMydA)  密码: ca8j
+
+Google Drive: [链接](https://drive.google.com/file/d/1F_RI45eOuT0CPHml_5s_I6hoG1rBX_Pd/view?usp=sharing)
+
 执行下面的推断代码，其中sample为存放测试图片的目录，可以自己随意挑选几张，output为推断结果目录
 ```
 python inference.py --model weights/best.pt --folder sample --output output
