@@ -112,9 +112,9 @@ class Trainer(object):
             out = net(image)
             sig = torch.sigmoid(out)
 
-            loss1 = 0.7 * self.loss_func1(out, mask.float())
+            loss1 = self.loss_func1(out, mask.float())
             bce_loss.append(loss1.item())
-            loss2 = 0.3 * self.loss_func2(sig, mask)
+            loss2 = self.loss_func2(sig, mask)
             dice_loss.append(loss2.item())
             mask_loss = loss1 + loss2  # + loss_func3(out, mask)
             mask_loss.backward()
@@ -183,9 +183,9 @@ class Trainer(object):
                 image, mask = (Variable(image).cuda(), Variable(mask).cuda())
             out = net(image)
             sig = torch.sigmoid(out)
-            loss1 = 0.7 * self.loss_func1(out, mask.float())
+            loss1 = self.loss_func1(out, mask.float())
             bce_loss.append(loss1.item())
-            loss2 = 0.3 * self.loss_func2(sig, mask)
+            loss2 = self.loss_func2(sig, mask)
             dice_loss.append(loss2.item())
             mask_loss = loss1 + loss2  # + loss_func3(out, mask)
 
@@ -225,7 +225,7 @@ class Trainer(object):
                 last_MIOU = miou
             torch.save(net,
                        os.path.join(self.args.output, f"{epoch}_lane.pt"))
-        torch.save(net,self.args.output, f"last.pt")
+        torch.save(net, self.args.output, f"last.pt")
 
 
 def main():
@@ -237,7 +237,7 @@ def main():
         os.mkdir("weights")
     parser.add_argument("--batch_size", type=int, default=2)
     parser.add_argument("--weights", type=str, help="预训练模型")
-    parser.add_argument('--output',type=str,default='weights')
+    parser.add_argument('--output', type=str, default='weights')
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--epochs", type=int, default=30)
     parser.add_argument("--back",

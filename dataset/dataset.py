@@ -1,4 +1,3 @@
-from augment import aug_image_and_segmap
 import pdb
 import cv2
 import numpy as np
@@ -11,15 +10,15 @@ from torchvision.transforms import (
     ColorJitter,
     Compose,
     RandomErasing,
-    RandomHorizontalFlip,
-    RandomRotation,
-    RandomCrop,
+    RandomGrayscale,
     ToPILImage,
     ToTensor,
 )
+from torchvision.transforms.functional import convert_image_dtype
 from util.label_util import mask_to_label
 import torch.nn.functional as F
 from glob import glob
+import os
 
 
 def one_hot(img):
@@ -38,15 +37,20 @@ class LaneDataSet(Dataset):
         self.wid = wid
         self.multi_scale = multi_scale
         self.hei = int(wid / self.ratio)
-        self.min_size = int(wid * 0.7)
-        self.max_size = int(wid * 1.1)
-        imgs = list(glob(f'{root}/**/*.jpg', recursive=True))
-        pos = int(len(imgs) * 0.8)
+        self.min_size = int(wid * 0.8)
+        self.max_size = int(wid * 1.2)
         if self.mode == "train":
-            self.transform = aug_image_and_segmap
-            self.files = imgs[:pos]
+            self.transform = Compose([
+                ToPILImage(),
+                ColorJitter(0.4, 0.3, 0.3),
+                ToTensor(),
+                RandomErasing(p=0.5, scale=(0.03, 0.1), ratio=(0.05, 0.4)),
+            ])
+            with open('train.txt', 'r') as f:
+                self.files = f.readlines()
         else:
-            self.files = imgs[pos:]
+            with open('val.txt', 'r') as f:
+                self.files = f.readlines()
             self.transform = ToTensor()
 
     def __len__(self):
@@ -62,21 +66,33 @@ class LaneDataSet(Dataset):
                           interpolation=cv2.INTER_NEAREST)
         return mask
 
+    def convert_label_to_img(self, path):
+        lst = path.split('/')
+        road = lst[2].split('_')[1]
+        lst[1] = f'ColorImage_{road}'
+        lst[2] = f'ColorImage'
+        del lst[3]
+        lst[-1] = lst[-1].replace('_bin.png', '.jpg')
+        return os.sep.join(lst)
+
     def __getitem__(self, index):
         row = self.files[index].strip()
-        img = cv2.imread(row)
-        label_path = row.replace(
-            'Image/ColorImage', 'Label').replace('.jpg', '_bin.png')
+        mask = cv2.imread(row, 0)
+        img_path = self.convert_label_to_img(row)
+        img = cv2.imread(img_path)
+
+        # label_path = row.replace(
+        #    'Image/ColorImage', 'Label').replace('.jpg', '_bin.png')
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        mask = cv2.imread(label_path, 0)
+
         img, mask = img[690:, :, :], mask[690:, :]
         img = self.resize_img(img)
         mask = self.resize_mask(mask)
+        if self.transform:
+            img = self.transform(img)
         label = mask_to_label(mask)
-        if self.mode == 'train':
-            img, label = self.transform(img, label)
         label = one_hot(label)
-        return ToTensor()(img), torch.LongTensor(label)
+        return img, torch.Tensor(label)
 
     def resize_timg(self, image, size):
         image = F.interpolate(image.unsqueeze(0),
@@ -109,11 +125,11 @@ class LaneDataSet(Dataset):
 
 
 if __name__ == "__main__":
-    data = LaneDataSet(multi_scale=True)
+    data = LaneDataSet()
     from torch.utils.data import DataLoader
-
+    data[0]
     loader = DataLoader(
-        data, batch_size=2, collate_fn=data.collate_fn, num_workers=1)
+        data, batch_size=1)  # collate_fn=data.collate_fn, num_workers=1)
     i = 0
     import time
     ss = time.time()

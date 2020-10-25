@@ -22,13 +22,13 @@ def aug_image_and_segmap(image, segmap):
     seq = iaa.Sequential(
         [
 
-            iaa.Sharpen((0.1, 0.3)),  # sharpen the image
+            #iaa.Sharpen((0.1, 0.3)),  # sharpen the image
             iaa.Affine(
-                rotate=(-40, 45)
+                rotate=(-10, 15)
             ),  # rotate by -45 to 45 degrees (affects segmaps)
-            iaa.ElasticTransformation(
-                alpha=10, sigma=5
-            ),  # apply water effect (affects segmaps)
+            #iaa.ElasticTransformation(
+            #    alpha=10, sigma=5
+            #),  # apply water effect (affects segmaps)
             iaa.ChannelShuffle(),
             # iaa.BlendAlphaRegularGrid(iaa.Multiply(0.0,0.5)),
             iaa.Fliplr(0.5),
@@ -36,8 +36,8 @@ def aug_image_and_segmap(image, segmap):
             #iaa.Jigsaw(),
             iaa.OneOf(
                 [
-                    iaa.Dropout([0.05, 0.2]),  # drop 5% or 20% of all pixels
-                    iaa.CoarseDropout(0.2, size_percent=0.05, random_state=2),
+                    #iaa.Dropout([0.05, 0.2]),  # drop 5% or 20% of all pixels
+                    iaa.CoarseDropout((0.02,0.1), size_percent=0.07, random_state=2),
                 ]
 
             )
