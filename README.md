@@ -36,7 +36,7 @@ data
 ```
 由于4类别比例比较少(在所有分类中约占百分之一),所以为了训练和测试分布大致一致，这里使用split.py进行数据划分生产train.txt和val.txt
 ```
-python split.py
+python split.py --roads 2,4 --root data
 ```
 ## Training
 打开visdom
