@@ -40,13 +40,12 @@ class Spliter(object):
         for _ in self.pool.map(self.job, mask >> split_into_n(arg.cpu)):
             pass
         print("shuffle data and split trainval")
-        random.shuffle(self.four_label_paths)
-        random.shuffle(self.other_label_paths)
         train_img, val_img = train_test_split(self.other_label_paths)
         train_img_, val_img_ = train_test_split(self.four_label_paths)
         train_img += train_img_
         val_img += val_img_
-
+        random.shuffle(train_img)
+        random.shuffle(val_img)
         print(f"write {len(train_img)} lines to train.txt")
         with open('train.txt', 'w') as f:
             f.writelines('\n'.join(train_img))
